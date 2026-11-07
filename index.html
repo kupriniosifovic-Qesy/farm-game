@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🌾 Ферма: Империя</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap');
+  :root {
+    --bg-main: #0a0f1c; --panel: rgba(22, 45, 35, 0.85);
+    --panel-border: rgba(126, 231, 135, 0.2);
+    --accent: #7ee787; --gold: #ffd76a; --danger: #ff6b6b;
+    --blue: #7ec8ff; --purple: #c79eff; --orange: #ff9f43;
+    --text: #f0f7f2; --muted: #8ba89a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Nunito', sans-serif; }
+  html, body { height: 100%; touch-action: manipulation; user-select: none; overflow-x: hidden; }
+  
+  body {
+    color: var(--text); background: linear-gradient(135deg, #0a0f1c, #132b23, #0d1f1a);
+    background-size: 400% 400%; animation: gradientBG 20s ease infinite;
+    display: flex; justify-content: center; padding: 15px;
+  }
+  @keyframes gradientBG { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+  
+  .game { max-width: 850px; width: 100%; padding-bottom: 100px; position: relative; display: none; z-index: 20; }
+
+  /* Шапка и статы */
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  h1 { font-size: 26px; font-weight: 900; background: linear-gradient(90deg, #a8ff78, #ffd76a); -webkit-background-clip: text; color: transparent; text-shadow: 0 0 15px rgba(255, 215, 106, 0.4), 0 4px 10px rgba(0,0,0,0.3); }
+  .header-actions { display: flex; gap: 10px; }
+  .icon-btn { background: var(--panel); border: 1px solid var(--panel-border); color: var(--text); border-radius: 14px; padding: 10px 14px; font-size: 18px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(5px); }
+  .icon-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat { 
+    background: linear-gradient(180deg, rgba(40, 70, 50, 0.7), rgba(20, 40, 30, 0.8)); 
+    border: 1px solid var(--panel-border); border-radius: 20px; padding: 15px; position: relative; overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4), inset 0 2px 5px rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+  }
+  .stat::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.6; }
+  .stat .label { font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; }
+  .stat .value { font-size: 26px; font-weight: 900; margin-top: 5px; }
+  .stat.coins .value { color: var(--gold); text-shadow: 0 0 10px rgba(255, 215, 106, 0.4), 0 2px 5px rgba(0,0,0,0.5); }
+  .stat.income .value { color: var(--blue); font-size: 20px; text-shadow: 0 0 10px rgba(126, 200, 255, 0.4); }
+  
+  .xp-bar-container { height: 8px; background: rgba(0,0,0,0.5); border-radius: 4px; margin-top: 8px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
+  .xp-bar-fill { height: 100%; background: linear-gradient(90deg, #7ee787, #ffd76a); width: 0%; transition: width 0.3s ease; border-radius: 4px; box-shadow: 0 0 10px rgba(126,231,135,0.6); }
+  .xp-text { font-size: 10px; color: var(--muted); text-align: right; margin-top: 3px; font-weight: 800; }
+
+  /* Вкладки */
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab { 
+    flex: 1; text-align: center; background: rgba(20, 40, 30, 0.5); border: 1px solid rgba(255,255,255,0.05); 
+    border-radius: 16px; padding: 12px 8px; cursor: pointer; font-size: 13px; font-weight: 800; color: var(--muted); 
+    transition: 0.3s; min-width: 80px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); position: relative; backdrop-filter: blur(5px);
+  }
+  .tab:hover { background: rgba(40, 70, 50, 0.8); color: #fff; }
+  .tab.active { 
+    background: linear-gradient(135deg, rgba(126,231,135,0.2), rgba(126,231,135,0.05)); 
+    border-color: var(--accent); color: var(--accent); 
+    box-shadow: 0 0 15px rgba(126, 231, 135, 0.2), inset 0 0 10px rgba(126, 231, 135, 0.1); 
+    transform: translateY(-2px); text-shadow: 0 0 8px rgba(126, 231, 135, 0.6);
+  }
+  .tab.donate { color: var(--gold); border-color: rgba(255,215,106,0.3); }
+  .tab.donate.active { background: linear-gradient(135deg, rgba(255,215,106,0.2), rgba(255,215,106,0.05)); border-color: var(--gold); color: var(--gold); box-shadow: 0 0 15px rgba(255,215,106,0.3); text-shadow: 0 0 8px rgba(255,215,106,0.8); }
+  .tab.donate { animation: pulseGold 2s infinite; }
+  @keyframes pulseGold { 0%, 100% { box-shadow: 0 0 10px rgba(255,215,106,0.2); } 50% { box-shadow: 0 0 20px rgba(255,215,106,0.6); border-color: var(--gold); } }
+
+  /* Красная точка для уведомления */
+  .notification-dot {
+    position: absolute; top: -5px; right: -5px; width: 16px; height: 16px;
+    background: #ff4444; border-radius: 50%; border: 2px solid #0d1f1a;
+    animation: pulseRed 1.5s infinite; display: none;
+  }
+  @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); } }
+
+  .pane { display: none; }
+  .pane.active { display: block; animation: fadeIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(15px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+  /* Дизайн разных разделов */
+  .field { 
+    background: linear-gradient(180deg, rgba(30, 55, 40, 0.7), rgba(15, 30, 22, 0.8)); 
+    border: 2px solid rgba(93, 64, 55, 0.4); border-radius: 24px; padding: 20px; margin-bottom: 20px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative; backdrop-filter: blur(10px);
+  }
+  .field::after { content: ''; position: absolute; top: 10px; right: 15px; width: 6px; height: 6px; background: #8d6e63; border-radius: 50%; box-shadow: inset 0 1px 2px rgba(255,255,255,0.5); }
+  
+  #pane-farm .field { border-color: #3e2723; }
+  #pane-tools .field { border-color: #455a64; background: linear-gradient(180deg, rgba(30,45,55,0.7), rgba(15,25,35,0.8)); }
+  #pane-greenhouse .field { border-color: #66bb6a; background: linear-gradient(180deg, rgba(25,55,35,0.7), rgba(10,30,20,0.8)); box-shadow: 0 0 30px rgba(102, 187, 106, 0.1); }
+  #pane-animals .field { border-color: #ffb74d; background: linear-gradient(180deg, rgba(45,35,20,0.7), rgba(25,20,10,0.8)); }
+  #pane-achievements .field { border-color: #ffd76a; background: linear-gradient(180deg, rgba(55,45,20,0.7), rgba(35,25,10,0.8)); }
+  #pane-stars .field { border-color: var(--gold); background: linear-gradient(180deg, rgba(60,50,20,0.8), rgba(30,25,10,0.9)); box-shadow: 0 0 30px rgba(255, 215, 106, 0.1); }
+
+  .field-head { display: flex; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; align-items: center;}
+  .field h2 { font-size: 18px; color: var(--accent); font-weight: 900; text-shadow: 0 0 10px rgba(126, 231, 135, 0.5); }
+  
+  /* Грядки */
+  .plots { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; }
+  .plot { 
+    aspect-ratio: 1; border-radius: 16px; border: 3px solid #2c1b15; display: flex; flex-direction: column; 
+    align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; font-size: 12px; 
+    text-align: center; padding: 5px; box-shadow: 0 6px 15px rgba(0,0,0,0.5), inset 0 2px 5px rgba(255,255,255,0.1);
+  }
+  .plot:hover { transform: translateY(-4px) scale(1.02); }
+  .plot:active { transform: scale(0.95); }
+  .plot.empty { background: repeating-linear-gradient(45deg, #3e2723, #3e2723 10px, #4e342e 10px, #4e342e 20px); }
+  .plot.growing { background: linear-gradient(135deg, #2c5a34, #1c3b22); border-color: #1b4a22; }
+  .plot.ready { background: linear-gradient(135deg, #4c7a32, #365f23); border-color: #b6ffb0; animation: pulseReady 1.5s infinite; }
+  .plot .icon { font-size: 32px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6)); }
+  .plot .timer { font-size: 12px; font-weight: 900; color: #fff; text-shadow: 0 1px 2px #000; }
+  .plot .bar { width: 80%; height: 6px; background: rgba(0,0,0,0.6); border-radius: 4px; margin-top: 6px; overflow: hidden;}
+  .plot .bar div { height: 100%; background: linear-gradient(90deg, #7ee787, #d4ff9e); border-radius: 4px; }
+  @keyframes pulseReady { 0%,100% { box-shadow: 0 0 0 0 rgba(180,255,170,0.3), inset 0 0 10px rgba(180,255,170,0.2); } 50% { box-shadow: 0 0 0 10px rgba(180,255,170,0), inset 0 0 20px rgba(180,255,170,0.5); } }
+
+  /* Магазины и списки */
+  .shop { display: grid; gap: 10px; }
+  .item { 
+    display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); 
+    border-radius: 16px; padding: 12px; transition: 0.2s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+    position: relative; overflow: hidden;
+  }
+  .item:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); transform: translateX(4px); }
+  .item .icon { font-size: 32px; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.4)); z-index: 2;}
+  .item .info { flex: 1; z-index: 2;}
+  .item .name { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;}
+  .item .desc { font-size: 13px; color: var(--muted); margin-top: 2px; font-weight: 700; }
+  
+  /* Бейджи редкости */
+  .rarity-badge, .badge { 
+    font-size: 10px; padding: 2px 6px; border-radius: 6px; font-weight: 900; 
+    text-transform: uppercase; letter-spacing: 0.5px; margin-left: 6px;
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.2);
+    display: inline-block; vertical-align: middle;
+  }
+  .badge { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+
+  /* Анимация покупки */
+  .item.flash { animation: rowFlash 0.6s ease; }
+  @keyframes rowFlash {
+    0% { background: rgba(255, 255, 255, 0.1); transform: scale(1); }
+    50% { background: rgba(126, 231, 135, 0.2); transform: scale(1.02); box-shadow: 0 0 20px var(--accent); border-color: var(--accent); }
+    100% { background: rgba(0, 0, 0, 0.3); transform: scale(1); }
+  }
+
+  /* Достижения */
+  .ach-item { display: flex; gap: 15px; background: rgba(0,0,0,0.4); border-radius: 16px; padding: 15px; margin-bottom: 10px; align-items: center; border: 1px solid rgba(255,255,255,0.05); opacity: 0.5; filter: grayscale(1); transition: 0.3s; }
+  .ach-item.unlocked { opacity: 1; filter: grayscale(0); border-color: var(--gold); background: linear-gradient(90deg, rgba(255,215,106,0.1), transparent); box-shadow: 0 0 15px rgba(255,215,106,0.1); }
+  .ach-item .a-icon { font-size: 36px; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.5)); }
+  .ach-item .a-name { font-size: 16px; font-weight: 900; color: var(--gold); display: flex; align-items: center; gap: 6px; }
+  .ach-item .a-desc { font-size: 13px; color: var(--muted); font-weight: 700; margin-top: 3px; }
+
+  /* Кнопки */
+  button { 
+    font-family: inherit; font-weight: 900; cursor: pointer; text-transform: uppercase; 
+    background: linear-gradient(180deg, #4ea85a, #2e6e37); color: #fff; border: none; border-radius: 12px; 
+    padding: 10px 18px; font-size: 13px; transition: 0.1s; box-shadow: 0 5px 0 #1b4a22, 0 5px 15px rgba(0,0,0,0.3); 
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3); z-index: 2;
+  }
+  button:active { transform: translateY(5px); box-shadow: 0 0 0 #1b4a22, 0 2px 5px rgba(0,0,0,0.3); }
+  button:disabled { opacity: 0.5; background: #444; box-shadow: 0 5px 0 #222; cursor: not-allowed; text-shadow: none; }
+  button.buy { background: linear-gradient(180deg, #f1c40f, #d4ac0d); color: #111; box-shadow: 0 5px 0 #9a7d0a; text-shadow: none; }
+  button.ad-btn { background: linear-gradient(180deg, #ff7e5f, #feb47b); box-shadow: 0 5px 0 #b85e45; font-size: 11px; padding: 8px 10px; white-space: nowrap; }
+  
+  /* Кнопка ПОКОРМИТЬ */
+  button.feed-btn { 
+    background: linear-gradient(180deg, #f39c12, #d35400); 
+    box-shadow: 0 6px 0 #a04000, 0 8px 20px rgba(211, 84, 0, 0.3), inset 0 2px 5px rgba(255,255,255,0.2); 
+    width: 100%; margin-bottom: 15px; font-size: 16px; padding: 15px; border-radius: 16px; 
+    display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #f39c12;
+  }
+  button.feed-btn:active { transform: translateY(6px); box-shadow: 0 0 0 #a04000, 0 2px 5px rgba(0,0,0,0.3); }
+
+  button.star-btn { background: linear-gradient(180deg, #f1c40f, #d4ac0d); color: #111; box-shadow: 0 5px 0 #9a7d0a; text-shadow: none; font-size: 14px;}
+  button.star-btn.owned { background: #333; border-color: #555; color: #888; box-shadow: 0 5px 0 #111; cursor: default; }
+
+  /* Колесо Фортуны */
+  #wheelBtn { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #ff9f43, #ff7e5f); font-size: 30px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 4px 10px rgba(255,255,255,0.3); z-index: 1000; cursor: pointer; animation: floatBtn 3s ease-in-out infinite; border: 3px solid #fff; }
+  @keyframes floatBtn { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  
+  #wheelModal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 4000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+  .wheel-container { position: relative; width: 280px; height: 280px; margin-bottom: 20px; }
+  .wheel { width: 100%; height: 100%; border-radius: 50%; border: 8px solid #ffd76a; position: relative; overflow: hidden; transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1); box-shadow: 0 0 40px rgba(255,215,106,0.5); }
+  
+  .wheel-segment { 
+    position: absolute; width: 50%; height: 50%; transform-origin: bottom right; background: #333; border: 1px solid #555; 
+  }
+
+  /* ТЕКСТ НА КОЛЕСЕ */
+  .wheel-text-overlay {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 80px; 
+    margin-left: -40px; 
+    height: 50%;
+    transform-origin: bottom center;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 25px; 
+    color: #fff;
+    font-weight: 900;
+    font-size: 9px; 
+    text-shadow: 0 1px 3px #000, 0 0 6px #000; 
+    text-align: center;
+    line-height: 1.1;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .wheel-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: 40px; z-index: 10; filter: drop-shadow(0 4px 5px #000); }
+  
+  /* Список призов */
+  .wheel-prizes-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 90%; max-width: 340px; margin-bottom: 20px; }
+  .wheel-prize-item { background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.1); }
+
+  /* Тосты */
+  #toasts { position: fixed; top: 15px; right: 15px; display: flex; flex-direction: column; gap: 8px; z-index: 5000; pointer-events: none; align-items: flex-end; }
+  .toast { 
+    background: rgba(20, 45, 30, 0.95); border-left: 5px solid var(--accent); 
+    padding: 12px 20px; border-radius: 8px; font-weight: 800; font-size: 14px; 
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+    animation: toastIn 0.3s ease, toastOut 0.3s ease 1.7s forwards; 
+  }
+  .toast.gold { border-left-color: var(--gold); text-shadow: 0 0 8px rgba(255, 215, 106, 0.5); }
+  @keyframes toastIn { from { opacity: 0; transform: translateX(50px); } }
+  @keyframes toastOut { to { opacity: 0; transform: translateX(50px); } }
+
+  /* Огромное окно Ачивки */
+  #achPopup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.5); z-index: 5000; background: linear-gradient(135deg, #2c3e2c, #1a2b1a); border: 3px solid var(--gold); border-radius: 24px; padding: 30px 40px; text-align: center; opacity: 0; pointer-events: none; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 50px rgba(255,215,106,0.3); }
+  #achPopup.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+  #achPopup .icon { font-size: 70px; margin-bottom: 10px; animation: floatLogo 2s infinite; display: inline-block;}
+  #achPopup .title { font-size: 24px; font-weight: 900; color: var(--gold); text-shadow: 0 0 15px rgba(255,215,106,0.5); }
+  #achPopup .desc { font-size: 15px; color: var(--muted); margin-top: 5px; font-weight: 700; }
+
+  /* Конфетти */
+  .confetti { position: fixed; width: 10px; height: 10px; background-color: #f00; z-index: 4000; pointer-events: none; top: -20px; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(105vh) rotate(720deg); } }
+
+  /* Фон и Меню */
+  .floating-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
+  .float-item { position: absolute; font-size: 24px; opacity: 0.3; animation: floatUp 15s linear infinite; }
+  @keyframes floatUp { 0% { transform: translateY(0) rotate(0deg); opacity: 0; } 10% { opacity: 0.4; } 90% { opacity: 0.4; } 100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; } }
+  
+  .side-decor { position: fixed; top: 0; bottom: 0; width: 80px; pointer-events: none; z-index: 5; overflow: hidden; }
+  .side-decor.left { left: 0; }
+  .side-decor.right { right: 0; transform: scaleX(-1); }
+  .vine-item { position: absolute; left: 10px; font-size: 28px; opacity: 0.7; animation: sway 5s ease-in-out infinite alternate; }
+  @keyframes sway { 0% { transform: translateX(0) rotate(-15deg); } 100% { transform: translateX(15px) rotate(15deg); } }
+  @media (max-width: 900px) { .side-decor { display: none; } }
+
+  /* ГЛАВНОЕ МЕНЮ */
+  #main-menu { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    display: flex; flex-direction: column; align-items: center; justify-content: center; 
+    z-index: 2000; background: radial-gradient(circle at center, #132b23 0%, #0a0f1c 100%); 
+    transition: opacity 0.3s; 
+  }
+  .menu-card { 
+    background: linear-gradient(180deg, rgba(25, 50, 35, 0.95), rgba(15, 30, 20, 0.98)); 
+    border: 2px solid rgba(126, 231, 135, 0.3); border-radius: 24px; padding: 30px; text-align: center; 
+    width: 90%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.8), inset 0 0 30px rgba(126, 231, 135, 0.1);
+    position: relative; overflow: hidden; backdrop-filter: blur(10px);
+  }
+  .menu-card::before { content: '🌿'; position: absolute; top: -20px; left: -20px; font-size: 80px; opacity: 0.1; transform: rotate(-30deg); }
+  .menu-card::after { content: '🌿'; position: absolute; bottom: -20px; right: -20px; font-size: 80px; opacity: 0.1; transform: rotate(150deg); }
+  
+  .menu-logo { font-size: 70px; animation: floatLogo 3s infinite; filter: drop-shadow(0 10px 20px rgba(126, 231, 135, 0.4)); display: inline-block; margin-bottom: 10px;}
+  @keyframes floatLogo { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.05); } }
+  
+  .menu-title { 
+    font-size: 32px; font-weight: 900; margin-bottom: 20px;
+    background: linear-gradient(90deg, #a8ff78, #78ffd6, #ffd76a);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 5px 15px rgba(0,0,0,0.5);
+  }
+
+  .menu-stats-box {
+    display: flex; justify-content: space-between; background: rgba(0,0,0,0.5); 
+    padding: 12px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); 
+    margin-bottom: 25px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+  }
+  .menu-stats-box div { font-weight: 800; font-size: 14px; color: var(--muted); }
+  .menu-stats-box span { color: var(--gold); font-size: 16px; text-shadow: 0 0 10px rgba(255,215,106,0.5); }
+
+  .menu-btn { 
+    width: 100%; padding: 16px; font-size: 18px; margin-top: 12px; border-radius: 14px; 
+    position: relative; z-index: 2; transition: 0.2s;
+  }
+  .menu-btn.primary { background: linear-gradient(180deg, #4ea85a, #2e6e37); box-shadow: 0 6px 0 #1b4a22, 0 10px 20px rgba(0,0,0,0.3); border: 1px solid #7ee787; font-size: 20px; }
+  .menu-btn.promo-btn { background: linear-gradient(180deg, #f1c40f, #d4ac0d); color: #111; box-shadow: 0 6px 0 #9a7d0a; font-size: 15px; }
+  .menu-btn.daily-btn { background: linear-gradient(180deg, #2AABEE, #1E88E5); box-shadow: 0 6px 0 #1565C0, 0 10px 20px rgba(0,0,0,0.3); font-size: 15px; }
+  .menu-btn.music-btn { background: #444; box-shadow: 0 6px 0 #222; font-size: 15px; color: #ccc; }
+  .menu-btn.danger { background: transparent; border: 1px solid #ff6b6b; color: #ff6b6b; box-shadow: none; font-size: 13px; margin-top: 20px; }
+  .menu-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+  .menu-btn:active { transform: translateY(4px); box-shadow: none; }
+  
+  .menu-footer { margin-top: 20px; font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 700; position: relative; z-index: 2; }
+
+  /* Модальные окна */
+  #promoModal, #dailyModal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 4000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+  .modal-card { background: var(--panel); border: 2px solid var(--gold); border-radius: 24px; padding: 30px; text-align: center; width: 90%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
+  .modal-card h2 { color: var(--gold); text-shadow: 0 0 10px rgba(255,215,106,0.5); margin-bottom: 20px; }
+  .modal-card input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #fff; font-size: 16px; font-weight: 800; text-align: center; margin-bottom: 15px; outline: none; }
+  .modal-card input:focus { border-color: var(--gold); }
+
+  /* Мобильная версия */
+  @media (max-width: 600px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .stat.income { grid-column: span 2; }
+    .tab { padding: 10px 5px; font-size: 11px; }
+    .plots { grid-template-columns: repeat(3, 1fr); } 
+    
+    .field-head { flex-direction: column; align-items: stretch; }
+    .toolbar { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 10px;}
+    .toolbar button { width: 100%; margin: 0; font-size: 12px; padding: 10px; }
+    
+    button { padding: 10px; font-size: 12px; width: 100%; }
+    .item { flex-wrap: wrap; }
+    .item button { width: 100%; margin-top: 5px; }
+    #toasts { left: 10px; right: 10px; align-items: center; }
+    .toast { width: 100%; border-left: none; border-bottom: 5px solid var(--accent); }
+    #wheelBtn { bottom: 90px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Декор -->
+<div class="side-decor left" id="sideLeft"></div>
+<div class="side-decor right" id="sideRight"></div>
+<div class="floating-bg" id="floating-bg"></div>
+
+<!-- Всплывающее окно Достижения -->
+<div id="achPopup">
+  <div class="icon" id="achIcon">🏆</div>
+  <div class="title">Достижение получено!</div>
+  <div class="desc" id="achName">Название</div>
+</div>
+
+<!-- ГЛАВНОЕ МЕНЮ -->
+<div id="main-menu">
+  <div class="menu-card">
+    <div class="menu-logo">🌾</div>
+    <h1 class="menu-title">Ферма: Империя</h1>
+    
+    <div class="menu-stats-box">
+      <div>⭐ Уровень: <br><span id="menu-level">1</span></div>
+      <div>💰 Монеты: <br><span id="menu-coins">100</span></div>
+    </div>
+
+    <button class="menu-btn primary" id="btn-play">ИГРАТЬ</button>
+    <button class="menu-btn daily-btn" id="btn-daily">🎁 Ежедневный бонус</button>
+    <button class="menu-btn promo-btn" id="btn-promo">🔑 Ввести промокод</button>
+    <button class="menu-btn music-btn" id="musicBtn">🎵 Музыка: Выкл</button>
+    
+    <button class="menu-btn danger" id="btn-reset-menu">Сбросить прогресс</button>
+    <div class="menu-footer">v25.2 • Сделано с душой</div>
+  </div>
+</div>
+
+<!-- ИГРА -->
+<div class="game" id="game-container">
+  <header>
+    <h1>🌾 Ферма</h1>
+    <div class="header-actions">
+      <button class="icon-btn" id="menuBtn">🏠</button>
+      <button class="icon-btn" id="soundBtn">🔊</button>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat coins"><div class="label">💰 Монеты</div><div class="value" id="coins">0</div></div>
+    <div class="stat">
+      <div class="label">⭐ Уровень</div>
+      <div class="value" id="level">1</div>
+      <div class="xp-bar-container"><div class="xp-bar-fill" id="xpfill"></div></div>
+      <div class="xp-text" id="xp">0/150</div>
+    </div>
+    <div class="stat income"><div class="label">📈 Доход</div><div class="value" id="income">0/с</div></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="farm"><div class="notification-dot" id="farmDot"></div>🌱 Ферма</div>
+    <div class="tab" data-tab="tools">🛠 Инвентарь</div>
+    <div class="tab" data-tab="greenhouse" id="tabGreenhouse">🏡 Теплица</div>
+    <div class="tab" data-tab="animals">🐔 Животные</div>
+    <div class="tab" data-tab="upgrades">⚡ Улучшения</div>
+    <div class="tab" data-tab="achievements">🏆 Награды</div>
+    <div class="tab donate" data-tab="stars">⭐ Донат</div>
+  </div>
+
+  <!-- ФЕРМА -->
+  <div class="pane active" id="pane-farm">
+    <div id="eventBanner" style="display:none; background: linear-gradient(90deg, #d4af37, #ff8c00); padding: 10px; border-radius: 10px; text-align: center; font-weight: 900; margin-bottom: 15px; color: #000; animation: pulse 1s infinite;"></div>
+    
+    <div class="field">
+      <div class="field-head">
+        <h2>Поле</h2>
+        <div class="toolbar">
+          <button class="ghost" id="plantAllBtn">Посадить</button>
+          <button class="ghost" id="harvestAllBtn">Собрать</button>
+          <button class="ad-btn" id="adBtn">🎁 +15K 💰</button>
+          <button class="buy" id="buyPlotBtn" onclick="buyPlot()">➕ Поле</button>
+        </div>
+      </div>
+      <div class="plots" id="plots"></div>
+    </div>
+    
+    <div class="field">
+      <div class="field-head"><h2>🛒 Магазин семян</h2></div>
+      <div class="shop" id="shop"></div>
+    </div>
+  </div>
+
+  <!-- ИНВЕНТАРЬ -->
+  <div class="pane" id="pane-tools">
+    <div class="field">
+      <div class="field-head"><h2>🛠 Инструменты</h2></div>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:15px; font-weight:700;">Чем больше макс. вес, тем дороже продажа урожая. Максимальный уровень: 5.</p>
+      <div class="shop" id="toolsList"></div>
+    </div>
+    <div class="field">
+      <div class="field-head"><h2>✨ Мутации семян</h2></div>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:15px; font-weight:700;">Повышай шанс выпадения редких семян.</p>
+      <div class="shop" id="rarityUpgradesList"></div>
+    </div>
+  </div>
+
+  <!-- ТЕПЛИЦА -->
+  <div class="pane" id="pane-greenhouse">
+    <div class="field">
+      <div class="field-head"><h2>🏡 Теплица</h2></div>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:15px; font-weight:700;">Посади здесь семя для получения огромного веса.</p>
+      <div id="greenhouseSlot" style="margin-bottom: 20px; display: flex; justify-content: center;"></div>
+      <div class="shop" id="greenhouseUpgradesList"></div>
+    </div>
+  </div>
+
+  <!-- ЖИВОТНЫЕ -->
+  <div class="pane" id="pane-animals">
+    <div class="field">
+      <div class="field-head"><h2>🐔 Кормление и Постройки</h2></div>
+      <button class="feed-btn" id="feedBtn">🍎 Покормить животных</button>
+      <div class="shop" id="animalUpgradesList"></div>
+    </div>
+    <div class="field">
+      <div class="field-head"><h2>🐄 Купить животных</h2></div>
+      <div class="shop" id="animalsList"></div>
+    </div>
+  </div>
+
+  <!-- УЛУЧШЕНИЯ -->
+  <div class="pane" id="pane-upgrades">
+    <div class="field">
+      <div class="field-head"><h2>⚡ Глобальные улучшения</h2></div>
+      <div class="shop" id="upgradesList"></div>
+    </div>
+    
+    <!-- ПРЕСТИЖ -->
+    <div class="field" style="border-color: rgba(199,158,255,0.4); background: linear-gradient(180deg, rgba(50,30,60,0.9), rgba(20,15,30,0.9));">
+      <div class="field-head"><h2 style="color: var(--purple); text-shadow: 0 0 10px rgba(199,158,255,0.5);">✨ Престиж</h2></div>
+      <div style="font-size: 13px; color: var(--muted); margin-bottom: 15px; font-weight: 700;">
+        Сбросьте прогресс, чтобы получить <b>Звезды</b>. Каждая звезда дает <b>+15%</b> ко всему доходу навсегда!<br><br>Требуется: 30 уровень.
+      </div>
+      <div class="shop" id="prestigeList"></div>
+    </div>
+  </div>
+
+  <!-- ДОСТИЖЕНИЯ -->
+  <div class="pane" id="pane-achievements">
+    <div class="field">
+      <div class="field-head"><h2>🏆 Твои награды</h2></div>
+      <div class="shop" id="achievementsList"></div>
+    </div>
+  </div>
+
+  <!-- ДОНАТ ЗА ЗВЕЗДЫ -->
+  <div class="pane" id="pane-stars">
+    <div class="field">
+      <div class="field-head"><h2>⭐ Магазин Telegram Stars</h2></div>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:15px; font-weight:700;">Покупайте редкие предметы за звезды. Деньги идут на развитие игры!</p>
+      
+      <h3 style="color:var(--gold); margin-bottom:10px; text-shadow: 0 0 10px rgba(255,215,106,0.5);">💰 Монеты</h3>
+      <div class="shop">
+        <div class="item">
+          <div class="icon">💰</div>
+          <div class="info"><div class="name" style="color:var(--gold); text-shadow: 0 0 8px rgba(255,215,106,0.5);">1 Миллион</div><div class="desc">Мгновенное пополнение</div></div>
+          <button class="star-btn" onclick="buyStars('coins_1m')">50 ⭐</button>
+        </div>
+        <div class="item">
+          <div class="icon">💰</div>
+          <div class="info"><div class="name" style="color:var(--gold); text-shadow: 0 0 8px rgba(255,215,106,0.5);">10 Миллионов</div><div class="desc">Для серьезных фермеров</div></div>
+          <button class="star-btn" onclick="buyStars('coins_10m')">300 ⭐</button>
+        </div>
+        <div class="item">
+          <div class="icon">💰</div>
+          <div class="info"><div class="name" style="color:var(--gold); text-shadow: 0 0 8px rgba(255,215,106,0.5);">100 Миллионов</div><div class="desc">Станьте миллиардером</div></div>
+          <button class="star-btn" onclick="buyStars('coins_100m')">1500 ⭐</button>
+        </div>
+      </div>
+
+      <h3 style="color:var(--gold); margin-top:15px; margin-bottom:10px; text-shadow: 0 0 10px rgba(255,215,106,0.5);">🚀 Вечные улучшения</h3>
+      <div class="shop">
+        <div class="item">
+          <div class="icon">🤖</div>
+          <div class="info"><div class="name" style="color:var(--blue); text-shadow: 0 0 8px rgba(126,200,255,0.5);">Автосборщик</div><div class="desc">Собирает урожай сам каждые 10 сек</div></div>
+          <button class="star-btn" id="btn-autocollector" onclick="buyStars('autocollector')">150 ⭐</button>
+        </div>
+        <div class="item">
+          <div class="icon">⚡</div>
+          <div class="info"><div class="name" style="color:var(--orange); text-shadow: 0 0 8px rgba(255,159,67,0.5);">Вечный ускоритель</div><div class="desc">Навсегда ускоряет рост в 2 раза</div></div>
+          <button class="star-btn" id="btn-speedbooster" onclick="buyStars('speedbooster')">400 ⭐</button>
+        </div>
+        <div class="item" style="border-color:var(--gold);">
+          <div class="icon">👑</div>
+          <div class="info"><div class="name" style="color:var(--purple); text-shadow: 0 0 8px rgba(199,158,255,0.5);">VIP Статус</div><div class="desc">+50% к доходу и золотой ник</div></div>
+          <button class="star-btn" id="btn-vip" onclick="buyStars('vip')">1000 ⭐</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Кнопка Колеса Фортуны -->
+<button id="wheelBtn" onclick="openWheel()">🎡</button>
+
+<!-- Модальное окно Колеса Фортуны -->
+<div id="wheelModal">
+  <h2 style="color:var(--gold); font-size:28px; margin-bottom:15px; text-shadow: 0 0 15px rgba(255,215,106,0.8);">🎡 Колесо Фортуны</h2>
+  
+  <div class="wheel-prizes-list">
+    <div class="wheel-prize-item" style="color: #e74c3c;">+10K 💰</div>
+    <div class="wheel-prize-item" style="color: #1abc9c;">+50K 💰</div>
+    <div class="wheel-prize-item" style="color: #e67e22;">+500 XP</div>
+    <div class="wheel-prize-item" style="color: #3498db;">x2 Доход</div>
+    <div class="wheel-prize-item" style="color: #f1c40f;">+100K 💰</div>
+    <div class="wheel-prize-item" style="color: #9b59b6;">+1M 💰</div>
+    <div class="wheel-prize-item" style="color: #00ffff;">ДЖЕКПОТ</div>
+    <div class="wheel-prize-item" style="color: #ff00ff; font-weight: 900;">🌟 БОЖ. ДАР</div>
+  </div>
+
+  <div class="wheel-container">
+    <div class="wheel-pointer">🔻</div>
+    <div class="wheel" id="wheel"></div>
+  </div>
+  <p style="color:#fff; margin-bottom:20px; font-weight:800; font-size:16px; text-shadow: 0 0 8px rgba(255,255,255,0.5);">Цена прокрута: <span id="wheelCost" style="color:var(--gold); text-shadow: 0 0 10px var(--gold);">10 000</span> 💰</p>
+  <button id="spinBtn" onclick="spinWheel()" style="padding:15px 40px; font-size:20px; background:linear-gradient(180deg, #f1c40f, #d4ac0d); color:#111; box-shadow:0 5px 0 #9a7d0a; border-radius:20px; text-shadow:none;">КРУТИТЬ 🎰</button>
+  <button onclick="closeWheel()" style="margin-top:15px; background:transparent; border:1px solid #fff; color:#fff; box-shadow:none; text-shadow:none;">Закрыть</button>
+</div>
+
+<!-- Модальное окно Промокода -->
+<div id="promoModal">
+  <div class="modal-card">
+    <h2>🔑 Ввести промокод</h2>
+    <input type="text" id="promoInput" placeholder="Введите код..." style="text-transform: uppercase;">
+    <button id="applyPromoBtn" style="width: 100%; padding: 15px; font-size: 16px; background: linear-gradient(180deg, #f1c40f, #d4ac0d); color: #111;">Активировать</button>
+    <button onclick="closePromo()" style="margin-top:10px; background:transparent; border:1px solid #fff; color:#fff; box-shadow:none; width: 100%;">Закрыть</button>
+  </div>
+</div>
+
+<!-- Модальное окно Ежедневного Бонуса -->
+<div id="dailyModal">
+  <div class="modal-card">
+    <h2>🎁 Ежедневный Бонус</h2>
+    <p style="font-size: 15px; color: #fff; margin-bottom: 15px;">Серия входов: <b style="color: var(--gold);" id="dailyStreakText">1 день</b></p>
+    <p style="font-size: 14px; color: var(--muted); margin-bottom: 20px;">Заходи каждый день, чтобы получать всё больше монет! Пропустишь день — серия сбросится.</p>
+    
+    <button id="claimDailyBtn" style="width: 100%; padding: 15px; font-size: 18px; background: linear-gradient(180deg, #2AABEE, #1E88E5); box-shadow: 0 6px 0 #1565C0; color: #fff; margin-bottom: 10px;">ЗАБРАТЬ НАГРАДУ</button>
+    <button onclick="closeDaily()" style="background:transparent; border:1px solid #fff; color:#fff; box-shadow:none; width: 100%;">Закрыть</button>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+/* ================= АУДИО ================= */
+const AudioSys = (() => {
+  let ctx = null, musicEnabled = false, sfxEnabled = true;
+  let musicInterval = null, step = 0;
+  
+  function ensure() { if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) ctx = new AC(); } if (ctx && ctx.state === 'suspended') ctx.resume(); return ctx; }
+  
+  function playTone(freq, dur, type = 'sine', vol = 0.1, delay = 0) {
+    if (!sfxEnabled) return; const c = ensure(); if (!c) return;
+    const t0 = c.currentTime + delay;
+    const osc = c.createOscillator(), gain = c.createGain();
+    osc.type = type; osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.001, t0); gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.01); gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    osc.connect(gain).connect(c.destination); osc.start(t0); osc.stop(t0 + dur + 0.05);
+  }
+
+  function startMusic() {
+    const c = ensure(); if (!c) return;
+    musicEnabled = true; step = 0;
+    const bassline = [130.81, 130.81, 164.81, 196.00];
+    const melody = [
+      523.25, 0, 659.25, 523.25, 783.99, 0, 659.25, 0,
+      587.33, 0, 698.46, 587.33, 880.00, 0, 698.46, 0,
+      659.25, 0, 783.99, 659.25, 1046.50, 0, 783.99, 0,
+      587.33, 0, 698.46, 0, 523.25, 0, 392.00, 0
+    ];
+
+    musicInterval = setInterval(() => {
+      if (!musicEnabled) return;
+      const t0 = c.currentTime;
+      if (step % 4 === 0) {
+        const oscB = c.createOscillator(), gainB = c.createGain();
+        oscB.type = 'triangle'; oscB.frequency.setValueAtTime(bassline[Math.floor(step/4) % bassline.length], t0);
+        gainB.gain.setValueAtTime(0.001, t0); gainB.gain.linearRampToValueAtTime(0.05, t0 + 0.05); gainB.gain.linearRampToValueAtTime(0.001, t0 + 0.4);
+        oscB.connect(gainB).connect(c.destination); oscB.start(t0); oscB.stop(t0 + 0.5);
+      }
+      const freq = melody[step % melody.length];
+      if (freq > 0) {
+        const oscM = c.createOscillator(), gainM = c.createGain();
+        oscM.type = 'square'; oscM.frequency.setValueAtTime(freq, t0);
+        gainM.gain.setValueAtTime(0.001, t0); gainM.gain.linearRampToValueAtTime(0.02, t0 + 0.02); gainM.gain.linearRampToValueAtTime(0.001, t0 + 0.2);
+        oscM.connect(gainM).connect(c.destination); oscM.start(t0); oscM.stop(t0 + 0.25);
+      }
+      step++;
+    }, 150);
+  }
+  function stopMusic() { musicEnabled = false; clearInterval(musicInterval); }
+
+  return {
+    toggleSfx: () => { sfxEnabled = !sfxEnabled; return sfxEnabled; },
+    toggleMusic: () => { if (musicEnabled) { stopMusic(); return false; } else { startMusic(); return true; } },
+    click: () => playTone(800, 0.05),
+    plant: () => playTone(400, 0.1, 'triangle', 0.1, 600),
+    harvest: () => { playTone(600, 0.1); playTone(900, 0.15, 'sine', 0.1, 0.05); },
+    error: () => playTone(200, 0.2, 'sawtooth'),
+    gold: () => { [800, 1000, 1200, 1600].forEach((f, i) => playTone(f, 0.15, 'sine', 0.15, i*0.05)); },
+    buy: () => { playTone(700, 0.1); playTone(1000, 0.15, 'sine', 0.1, 0.05); },
+    upgrade: () => { playTone(400, 0.1); playTone(600, 0.1, 'sine', 0.1, 0.05); playTone(800, 0.15, 'sine', 0.1, 0.1); },
+    achievement: () => { [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => playTone(f, 0.3, 'triangle', 0.15, i*0.15)); },
+    feed: () => { playTone(400, 0.1, 'triangle'); playTone(600, 0.15, 'sine', 0.1, 0.1); playTone(800, 0.2, 'sine', 0.1, 0.2); },
+    jackpot: () => { [500, 700, 900, 1200, 1500, 2000].forEach((f, i) => playTone(f, 0.4, 'square', 0.1, i*0.1)); },
+    wheelSpin: () => {
+      let delay = 0;
+      const totalTime = 3800;
+      let stepTime = 40;
+      
+      const playTick = () => {
+        if (delay > totalTime) return;
+        setTimeout(() => playTone(600 + Math.random()*300, 0.03, 'square', 0.05), delay);
+        stepTime *= 1.12; 
+        delay += stepTime;
+        playTick();
+      };
+      playTick();
+    }
+  };
+})();
+
+/* ================= ДАННЫЕ ================= */
+const CROPS = [
+  { id: 'wheat',   name: 'Пшеница',   icon: '🌾', cost: 20,      sell: 120,     grow: 4,    xp: 10,    unlockLvl: 1, rarity: 'Обычное', rColor: '#a0a0a0' },
+  { id: 'carrot',  name: 'Морковь',   icon: '🥕', cost: 100,     sell: 600,     grow: 8,    xp: 30,    unlockLvl: 3, rarity: 'Необычное', rColor: '#7ee787' },
+  { id: 'corn',    name: 'Кукуруза',  icon: '🌽', cost: 500,     sell: 3000,    grow: 15,   xp: 100,   unlockLvl: 5, rarity: 'Редкое', rColor: '#7ec8ff' },
+  { id: 'potato',  name: 'Картофель', icon: '🥔', cost: 2000,    sell: 12000,   grow: 25,   xp: 300,   unlockLvl: 8, rarity: 'Редкое', rColor: '#7ec8ff' },
+  { id: 'tomato',  name: 'Томат',     icon: '🍅', cost: 10000,   sell: 60000,   grow: 40,   xp: 1000,  unlockLvl: 12, rarity: 'Эпическое', rColor: '#c79eff' },
+  { id: 'strawberry', name: 'Клубника', icon: '🍓', cost: 50000,  sell: 300000,  grow: 60,   xp: 3000,  unlockLvl: 15, rarity: 'Эпическое', rColor: '#c79eff' },
+  { id: 'grape',   name: 'Виноград',  icon: '🍇', cost: 250000,  sell: 1500000, grow: 90,   xp: 10000, unlockLvl: 18, rarity: 'Эпическое', rColor: '#c79eff' },
+  { id: 'cherry',  name: 'Вишня',     icon: '🍒', cost: 1000000, sell: 6000000, grow: 120,  xp: 30000, unlockLvl: 20, rarity: 'Легендарное', rColor: '#ffd76a' },
+  { id: 'pumpkin', name: 'Тыква',     icon: '🎃', cost: 5000000, sell: 30000000,grow: 150,  xp: 100000,unlockLvl: 22, rarity: 'Легендарное', rColor: '#ffd76a' },
+  { id: 'avocado', name: 'Авокадо',   icon: '🥑', cost: 25000000,sell:150000000,grow: 180,  xp: 300000,unlockLvl: 25, rarity: 'Легендарное', rColor: '#ffd76a' },
+  { id: 'pineapple', name: 'Ананас',  icon: '🍍', cost: 100000000,sell:600000000,grow: 220,  xp: 1000000,unlockLvl: 28, rarity: 'Космическое', rColor: '#ff9f43' },
+  { id: 'watermelon', name: 'Арбуз',  icon: '🍉', cost: 500000000,sell:3000000000,grow:260, xp: 3000000,unlockLvl: 30, rarity: 'Космическое', rColor: '#ff9f43' },
+  { id: 'dragon',  name: 'Драконий фрукт', icon: '🐉', cost: 2500000000, sell: 15000000000, grow: 320, xp: 10000000, unlockLvl: 35, rarity: 'Божественное', rColor: '#ff00ff' },
+  { id: 'star',    name: 'Звезда',    icon: '⭐', cost: 10000000000,sell:60000000000, grow: 400, xp: 30000000, unlockLvl: 40, rarity: 'Божественное', rColor: '#ff00ff' },
+  { id: 'apple',   name: 'Золотое яблоко', icon: '🍎', cost: 50000000000,sell:300000000000, grow: 500, xp: 100000000, unlockLvl: 45, rarity: 'Божественное', rColor: '#ff00ff' },
+];
+
+const TOOLS = [
+  { id: 'hands',   name: 'Руки',         icon: '👐', weightPerLvl: 0,   maxLvl: 1, cost: 0,        rarity: 'Базовое', rColor: '#a0a0a0' },
+  { id: 'bucket',  name: 'Ведро',        icon: '💧', weightPerLvl: 10,  maxLvl: 5, cost: 10000,    rarity: 'Обычное', rColor: '#a0a0a0' },
+  { id: 'can',     name: 'Лейка',        icon: '🚿', weightPerLvl: 30,  maxLvl: 5, cost: 100000,   rarity: 'Необычное', rColor: '#7ee787' },
+  { id: 'sprinkler',name:'Спринклер',    icon: '⛲', weightPerLvl: 60,  maxLvl: 5, cost: 1000000,  rarity: 'Редкое', rColor: '#7ec8ff' },
+  { id: 'drone',   name: 'Дрон',         icon: '🛸', weightPerLvl: 120, maxLvl: 5, cost: 20000000, rarity: 'Эпическое', rColor: '#c79eff' },
+  { id: 'harvester',name:'Комбайн',      icon: '🚜', weightPerLvl: 300, maxLvl: 5, cost: 200000000,rarity: 'Космическое', rColor: '#ff9f43' },
+];
+
+const ANIMALS = [
+  { id: 'chicken', name: 'Курица', icon: '🐔', cost: 500,      income: 1,     unlockLvl: 1,  rarity: 'Домашнее', rColor: '#a0a0a0', limit: 250 },
+  { id: 'cow',     name: 'Корова', icon: '🐄', cost: 15000,    income: 20,    unlockLvl: 5,  rarity: 'Необычное', rColor: '#7ee787', limit: 250 },
+  { id: 'sheep',   name: 'Овца',   icon: '🐑', cost: 250000,   income: 200,   unlockLvl: 10, rarity: 'Редкое', rColor: '#7ec8ff', limit: 250 },
+  { id: 'pig',     name: 'Свинья', icon: '🐖', cost: 5000000,  income: 2500,  unlockLvl: 15, rarity: 'Эпическое', rColor: '#c79eff', limit: 250 },
+  { id: 'unicorn', name: 'Единорог',icon:'🦄', cost: 150000000,income: 75000, unlockLvl: 25, rarity: 'Мифическое', rColor: '#ff00ff', limit: 250 },
+  { id: 'dragon',  name: 'Дракон', icon: '🐉', cost: 500000000,income: 250000,unlockLvl: 30, rarity: 'Легендарное', rColor: '#ff9f43', limit: 150 },
+];
+
+const ANIMAL_UPGRADES = [
+  { id: 'coop',    name: 'Курятник',  icon: '🏠', desc: 'Доход Кур +100% за ур.', baseCost: 250000,   mult: 3, max: 5 },
+  { id: 'barn',    name: 'Коровник',  icon: '🏚️', desc: 'Доход Коров и Свиней +100% за ур.', baseCost: 1000000,  mult: 3, max: 5 },
+  { id: 'pasture', name: 'Пастбище',  icon: '🌿', desc: 'Доход Овец и Единорогов +100% за ур.', baseCost: 5000000, mult: 3, max: 5 },
+];
+
+const UPGRADES = [
+  { id: 'speed',  name: 'Быстрый рост',  icon: '⚡', baseCost: 50000,   mult: 3.5, max: 15, desc: 'Скорость роста +15%' },
+  { id: 'value',  name: 'Цена',          icon: '💎', baseCost: 100000,  mult: 3.5, max: 15, desc: 'Цена урожая +15%' },
+  { id: 'income', name: 'Доход',         icon: '🧲', baseCost: 150000,  mult: 4.0, max: 15, desc: 'Доход животных +25%' },
+  { id: 'crit',   name: 'Крит. шанс',    icon: '🔥', baseCost: 500000,  mult: 5.0, max: 10, desc: 'Шанс x2 урожая +5%' },
+  { id: 'offline', name: 'Офлайн-доход', icon: '💤', baseCost: 300000,  mult: 4.5, max: 10, desc: 'Офлайн-доход +10%' },
+  { id: 'discount',name: 'Скидка на жив.',icon: '🏷️', baseCost: 500000,  mult: 5.0, max: 10, desc: 'Цена животных -3%' },
+  { id: 'harvest_mult',name: 'Множитель веса',icon: '🚜', baseCost: 1000000,  mult: 5.0, max: 10, desc: 'Макс. вес +10%' },
+];
+
+const RARITY_UPGRADES = [
+  { id: 'silver',  name: 'Серебро',   icon: '🥈', baseCost: 250000,  mult: 3.5, max: 10, baseChance: 0.05, step: 0.02, color: '#c0c0c0' },
+  { id: 'gold',    name: 'Золото',    icon: '🥇', baseCost: 1000000, mult: 4.0, max: 10, baseChance: 0.01, step: 0.005, color: '#ffd700' },
+  { id: 'rainbow', name: 'Радуга',    icon: '🌈', baseCost: 5000000, mult: 5.0, max: 10, baseChance: 0.002,step: 0.001, color: '#00ffff' },
+  { id: 'divine',  name: 'Божеств.',  icon: '🌟', baseCost: 25000000,mult: 6.0, max: 5,  baseChance: 0.0005,step: 0.0002, color: '#ff00ff' },
+];
+
+const GH_UPGRADES = [
+  { id: 'light', name: 'Освещение', icon: '💡', baseCost: 1000000, mult: 3, max: 10 },
+  { id: 'soil',  name: 'Почва',     icon: '🪴', baseCost: 2500000, mult: 3, max: 10 },
+  { id: 'fence', name: 'Забор',     icon: '🚧', baseCost: 5000000, mult: 3, max: 10 },
+];
+
+const ACHIEVEMENTS = [
+  { id: 'lvl5',   icon: '⭐', name: 'Новичок',         desc: 'Достигните 5 уровня', check: s => s.level >= 5, rarity: 'Обычное', rColor: '#a0a0a0' },
+  { id: 'lvl10',  icon: '🌟', name: 'Опытный',         desc: 'Достигните 10 уровня', check: s => s.level >= 10, rarity: 'Необычное', rColor: '#7ee787' },
+  { id: 'lvl20',  icon: '✨', name: 'Мастер',          desc: 'Достигните 20 уровня', check: s => s.level >= 20, rarity: 'Редкое', rColor: '#7ec8ff' },
+  { id: 'harv10', icon: '🧺', name: 'Сборщик',         desc: 'Соберите 10 урожаев', check: s => (s.stats?.harvests||0) >= 10, rarity: 'Обычное', rColor: '#a0a0a0' },
+  { id: 'harv100',icon: '🏅', name: 'Агроном',         desc: 'Соберите 100 урожаев', check: s => (s.stats?.harvests||0) >= 100, rarity: 'Эпическое', rColor: '#c79eff' },
+  { id: 'animals5',icon:'🐄', name: 'Фермер',          desc: 'Купите 5 животных', check: s => Object.values(s.animals).reduce((a,b)=>a+b,0) >= 5, rarity: 'Необычное', rColor: '#7ee787' },
+  { id: 'rich10k',icon: '💰', name: 'Богач',           desc: 'Накопите 10 000 монет', check: s => s.coins >= 10000, rarity: 'Редкое', rColor: '#7ec8ff' },
+  { id: 'rich1m', icon: '💎', name: 'Миллионер',       desc: 'Накопите 1 000 000 монет', check: s => s.coins >= 1000000, rarity: 'Легендарное', rColor: '#ffd76a' },
+  { id: 'gh1',    icon: '🏡', name: 'Тепличный',       desc: 'Соберите урожай из теплицы', check: s => (s.stats?.ghHarvests||0) >= 1, rarity: 'Редкое', rColor: '#7ec8ff' },
+  { id: 'mut1',   icon: '🌈', name: 'Счастливчик',     desc: 'Получите Радужное семя', check: s => (s.stats?.rainbow||0) >= 1, rarity: 'Эпическое', rColor: '#c79eff' },
+  { id: 'prestige1',icon:'✨', name: 'Новая жизнь',     desc: 'Сделайте первое перерождение', check: s => s.stars > 0, rarity: 'Божественное', rColor: '#ff00ff' },
+  { id: 'upg_animals',icon:'🏠', name: 'Заботливый',    desc: 'Купите улучшение для животных', check: s => Object.values(s.animalUpgrades||{}).reduce((a,b)=>a+b,0) >= 1, rarity: 'Обычное', rColor: '#a0a0a0' },
+];
+
+const PROMO_CODES = {
+  'QESY': 50000,
+  'FARM2024': 500000,
+  'TELEGRAM': 10000,
+  'BESTFARM': 1000000,
+  'STARS': 100000
+};
+
+/* ================= СОСТОЯНИЕ ================= */
+let state = defaultState();
+let gameStarted = false;
+const SAVE_KEY = 'farm_v25_2';
+const AD_COOLDOWN_MS = 10 * 60 * 1000;
+const MAX_PLOTS = 12;
+
+let initData = '';
+if (window.Telegram && window.Telegram.WebApp) {
+  initData = window.Telegram.WebApp.initData;
+}
+
+function defaultState() {
+  return {
+    coins: 100, level: 1, xp: 0, stars: 0,
+    plots: Array.from({ length: 6 }, () => null),
+    animals: {}, upgrades: {}, rarityUp: {}, tools: { bucket:0, can:0, sprinkler:0, drone:0, harvester:0 },
+    animalUpgrades: {}, 
+    greenhouse: { planted: null, upgrades: { light:0, soil:0, fence:0 }, readyAt: 0 },
+    selectedCrop: 'wheat',
+    lastTick: Date.now(),
+    lastAdTime: 0,
+    lastWheelSpin: 0,
+    feedEndTime: 0,
+    activeEvent: null, sound: true,
+    achievements: {},
+    usedPromos: [],
+    dailyStreak: 0,
+    lastDailyClaim: 0,
+    stats: { harvests: 0, ghHarvests: 0, rainbow: 0 },
+    hasAutoCollector: false,
+    hasSpeedBooster: false,
+    isVip: false
+  };
+}
+
+async function load() {
+  state = defaultState();
+
+  if (initData) {
+    try {
+      const res = await fetch('https://farm-server-8fyo.onrender.com/api/get-player', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.player) {
+          state = { ...defaultState(), ...data.player };
+          localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+          applyOffline();
+          return;
+        }
+      }
+    } catch (e) {
+      console.log('Сервер недоступен, грузим локально', e);
+    }
+  }
+
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    state = { ...defaultState(), ...JSON.parse(raw) };
+    if (!state.stats) state.stats = { harvests: 0, ghHarvests: 0, rainbow: 0 };
+    if (!state.animalUpgrades) state.animalUpgrades = {};
+    if (!state.usedPromos) state.usedPromos = [];
+    applyOffline();
+  } catch(e) { console.log('Ошибка локальной загрузки', e); }
+}
+
+let saveTimeout = null;
+function save() {
+  state.lastTick = Date.now();
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+
+  if (initData) {
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(async () => {
+      try {
+        await fetch('https://farm-server-8fyo.onrender.com/api/save-player', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData, playerData: state })
+        });
+      } catch (e) { console.log('Ошибка сохранения на сервер', e); }
+    }, 2000);
+  }
+}
+
+const $ = id => document.getElementById(id);
+
+const xpNeeded = lvl => Math.floor(150 * Math.pow(1.65, lvl - 1));
+
+function formatNum(num) {
+  if (num < 1000) return Math.floor(num).toString();
+  if (num < 1000000) return Math.floor(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  if (num < 1e9) return (num / 1e6).toFixed(1) + 'M';
+  return (num / 1e9).toFixed(1) + 'B';
+}
+
+function applyOffline() {
+  const now = Date.now(); let sec = Math.floor((now - state.lastTick) / 1000);
+  if (sec < 60) return; sec = Math.min(sec, 3600);
+  const offlineRate = 0.3 + (state.upgrades.offline || 0) * 0.1;
+  const inc = getIncome() * sec * offlineRate;
+  if (inc > 0) { state.coins += inc; setTimeout(() => toast('💤 Офлайн: +' + formatNum(inc)), 1000); }
+}
+
+/* ================= ЛОГИКА ================= */
+function starMult() { return 1 + (state.stars || 0) * 0.15; }
+
+function getIncome() {
+  let base = 0;
+  for (const [id, cnt] of Object.entries(state.animals)) {
+    const a = ANIMALS.find(x => x.id === id); if (a) {
+      let income = a.income;
+      if (id === 'chicken') income *= (1 + (state.animalUpgrades?.coop || 0) * 1.0);
+      if (id === 'cow' || id === 'pig') income *= (1 + (state.animalUpgrades?.barn || 0) * 1.0);
+      if (id === 'sheep' || id === 'unicorn' || id === 'dragon') income *= (1 + (state.animalUpgrades?.pasture || 0) * 1.0);
+      base += income * cnt;
+    }
+  }
+  let total = base * (1 + (state.upgrades.income || 0) * 0.25) * starMult();
+  if (state.feedEndTime && Date.now() < state.feedEndTime) total *= 2;
+  if (state.isVip) total *= 1.5;
+  return total;
+}
+
+function getSpeedMult() {
+  let mult = (1 + (state.upgrades.speed || 0) * 0.15) * starMult();
+  if (state.hasSpeedBooster) mult *= 2;
+  if (state.activeEvent && state.activeEvent.type === 'golden_rain') mult *= state.activeEvent.multSpeed;
+  if (state.activeEvent && state.activeEvent.type === 'drought') mult *= 0.5;
+  return mult;
+}
+
+function getValueMult() {
+  let mult = (1 + (state.upgrades.value || 0) * 0.15) * starMult();
+  if (state.activeEvent && state.activeEvent.type === 'golden_rain') mult *= state.activeEvent.multIncome;
+  return mult;
+}
+
+function getMaxWeight() {
+  let base = 5;
+  for(const [id, lvl] of Object.entries(state.tools)) {
+    const t = TOOLS.find(x => x.id === id);
+    if(t && lvl > 0) {
+      const actualLvl = Math.min(lvl, t.maxLvl);
+      base += t.weightPerLvl * actualLvl;
+    }
+  }
+  base *= (1 + (state.upgrades.harvest_mult || 0) * 0.10);
+  return base;
+}
+
+function getAnimalCost(a) {
+  const discount = 1 - (state.upgrades.discount || 0) * 0.03;
+  return Math.floor(a.cost * discount);
+}
+
+function getAdReward() { return Math.max(25000, Math.floor(getIncome() * 300)); }
+
+function rollRarity() {
+  const r = Math.random();
+  let silverC = RARITY_UPGRADES[0].baseChance + (state.rarityUp.silver || 0) * RARITY_UPGRADES[0].step;
+  let goldC = RARITY_UPGRADES[1].baseChance + (state.rarityUp.gold || 0) * RARITY_UPGRADES[1].step;
+  let rainbowC = RARITY_UPGRADES[2].baseChance + (state.rarityUp.rainbow || 0) * RARITY_UPGRADES[2].step;
+  let divineC = RARITY_UPGRADES[3].baseChance + (state.rarityUp.divine || 0) * RARITY_UPGRADES[3].step;
+
+  if (r < divineC) return { name: 'Божеств.', mult: 17, color: '#ff00ff', icon: '🌟' };
+  if (r < divineC + rainbowC) { state.stats.rainbow++; return { name: 'Радуга', mult: 11, color: '#00ffff', icon: '🌈' }; }
+  if (r < divineC + rainbowC + goldC) return { name: 'Золото', mult: 7, color: '#ffd700', icon: '🥇' };
+  if (r < divineC + rainbowC + goldC + silverC) return { name: 'Серебро', mult: 3, color: '#c0c0c0', icon: '🥈' };
+  return { name: 'Обычное', mult: 1, color: '#fff', icon: '' };
+}
+
+window.plantAll = () => {
+  let planted = false;
+  state.plots.forEach((p, i) => {
+    if (!p) {
+      const c = CROPS.find(x => x.id === state.selectedCrop);
+      if (state.coins >= c.cost) {
+        state.coins -= c.cost;
+        state.plots[i] = { cropId: c.id, readyAt: Date.now() + (c.grow*1000)/getSpeedMult(), duration: (c.grow*1000)/getSpeedMult() };
+        planted = true;
+      }
+    }
+  });
+  if (planted) { AudioSys.plant(); save(); render(); }
+};
+
+window.harvestAll = () => {
+  state.plots.forEach((p, i) => { if(p && Date.now() >= p.readyAt) harvest(i); });
+};
+
+window.harvest = (index, silent = false) => {
+  const p = state.plots[index]; if (!p || Date.now() < p.readyAt) return 0;
+  const crop = CROPS.find(c => c.id === p.cropId);
+  
+  const r = rollRarity();
+  const weight = Math.floor(Math.random() * getMaxWeight()) + 1;
+  const baseSell = crop.sell * getValueMult();
+  const weightMult = 0.5 + (weight / 20); 
+  const finalSell = Math.floor(baseSell * r.mult * weightMult);
+
+  state.coins += finalSell;
+  state.plots[index] = null;
+  state.stats.harvests++;
+  
+  addXp(crop.xp || 10);
+  checkAchievements();
+  
+  if (!silent) {
+    const btn = document.querySelectorAll('.plot')[index];
+    if (btn) {
+      const rect = btn.getBoundingClientRect();
+      const el = document.createElement('div');
+      el.style = `position:fixed; left:${rect.left}px; top:${rect.top}px; font-weight:900; color:${r.color}; z-index:999; pointer-events:none; transition:1s; text-shadow:0 2px 4px #000; font-size:16px;`;
+      el.textContent = `+${formatNum(finalSell)} 💰 (${weight}кг) ${r.icon}`;
+      document.body.appendChild(el);
+      requestAnimationFrame(() => { el.style.transform = 'translateY(-50px)'; el.style.opacity = '0'; });
+      setTimeout(() => el.remove(), 1000);
+    }
+    if (r.mult > 1) AudioSys.gold(); else AudioSys.harvest();
+  }
+  return finalSell;
+};
+
+window.buyPlot = () => {
+  if (state.plots.length >= MAX_PLOTS) {
+    toast('У вас максимальное количество полей!', 'warn');
+    return;
+  }
+  const cost = 10000 * Math.pow(3, state.plots.length - 6);
+  if (state.coins >= cost) {
+    state.coins -= cost;
+    state.plots.push(null);
+    toast('Куплено новое поле!', 'gold');
+    AudioSys.upgrade();
+    save(); render();
+  } else {
+    toast(`Нужно ${formatNum(cost)} монет!`, 'warn');
+  }
+};
+
+function addXp(amount) {
+  state.xp += amount;
+  while (state.xp >= xpNeeded(state.level)) {
+    state.xp -= xpNeeded(state.level);
+    state.level++;
+    
+    const newCrops = CROPS.filter(c => c.unlockLvl === state.level);
+    const newAnimals = ANIMALS.filter(a => a.unlockLvl === state.level);
+    
+    let msg = `🎉 Новый уровень: ${state.level}!`;
+    if (newCrops.length > 0) msg += `\n🌱 Открыто семя: ${newCrops.map(c=>c.name).join(', ')}`;
+    if (newAnimals.length > 0) msg += `\n🐔 Открыто животное: ${newAnimals.map(a=>a.name).join(', ')}`;
+    
+    toast(msg, 'gold');
+    AudioSys.buy();
+  }
+}
+
+function checkAchievements() {
+  ACHIEVEMENTS.forEach(a => {
+    if (!state.achievements[a.id] && a.check(state)) {
+      state.achievements[a.id] = true;
+      $('achIcon').innerText = a.icon;
+      $('achName').innerText = a.name;
+      const popup = $('achPopup');
+      popup.classList.add('show');
+      AudioSys.achievement();
+      setTimeout(() => { popup.classList.remove('show'); }, 2000);
+      save();
+    }
+  });
+}
+
+window.feedAnimals = () => {
+  const totalAnimals = Object.values(state.animals).reduce((a,b)=>a+b,0);
+  if (totalAnimals === 0) { toast('У вас нет животных!', 'warn'); return; }
+  const cost = 1000 + totalAnimals * 500;
+  if (state.coins >= cost) {
+    state.coins -= cost;
+    state.feedEndTime = Date.now() + 60000; 
+    toast('🍎 Животные сыты! Доход x2 на 60 сек.', 'gold');
+    AudioSys.feed();
+    save(); render();
+  } else {
+    toast(`Нужно ${formatNum(cost)} монет для корма!`, 'warn');
+  }
+};
+
+/* ================= ЕЖЕДНЕВНЫЙ БОНУС ================= */
+window.openDaily = () => { $('dailyModal').style.display = 'flex'; updateDailyUI(); };
+window.closeDaily = () => { $('dailyModal').style.display = 'none'; };
+
+function updateDailyUI() {
+  const now = Date.now();
+  const msInDay = 86400000;
+  const timeSince = now - state.lastDailyClaim;
+  const streakText = $('dailyStreakText');
+  const claimBtn = $('claimDailyBtn');
+
+  if (state.lastDailyClaim === 0) {
+    streakText.innerText = "1 день (старт)";
+    claimBtn.innerText = "ЗАБРАТЬ НАГРАДУ";
+    claimBtn.disabled = false;
+  } else if (timeSince < msInDay) {
+    const left = msInDay - timeSince;
+    const h = Math.floor(left / 3600000);
+    const m = Math.floor((left % 3600000) / 60000);
+    streakText.innerText = `${state.dailyStreak} дней`;
+    claimBtn.innerText = `ЖДИТЕ ${h}ч ${m}м`;
+    claimBtn.disabled = true;
+  } else {
+    streakText.innerText = `${state.dailyStreak} дней`;
+    claimBtn.innerText = "ЗАБРАТЬ НАГРАДУ";
+    claimBtn.disabled = false;
+  }
+}
+
+$('claimDailyBtn').onclick = () => {
+  const now = Date.now();
+  const msInDay = 86400000;
+  const timeSince = now - state.lastDailyClaim;
+
+  if (state.lastDailyClaim !== 0 && timeSince < msInDay) return;
+
+  if (state.lastDailyClaim === 0) {
+    state.dailyStreak = 1;
+  } else {
+    const daysPassed = Math.floor(timeSince / msInDay);
+    if (daysPassed === 1) state.dailyStreak++;
+    else state.dailyStreak = 1;
+  }
+
+  const baseReward = Math.max(10000, getIncome() * 3600 * 2);
+  const streakBonus = 1 + (state.dailyStreak * 0.5);
+  const finalReward = Math.floor(baseReward * streakBonus);
+
+  state.coins += finalReward;
+  state.lastDailyClaim = now;
+  
+  toast(`🎁 Ежедневный бонус: +${formatNum(finalReward)} монет! (Серия: ${state.dailyStreak})`, 'gold');
+  AudioSys.jackpot();
+  save(); render();
+  closeDaily();
+};
+
+/* ================= ПРОМОКОДЫ ================= */
+window.openPromo = () => { $('promoModal').style.display = 'flex'; $('promoInput').value = ''; };
+window.closePromo = () => { $('promoModal').style.display = 'none'; };
+
+$('applyPromoBtn').onclick = () => {
+  const code = $('promoInput').value.toUpperCase().trim();
+  if (!code) return;
+  
+  if (state.usedPromos.includes(code)) {
+    toast('❌ Вы уже использовали этот промокод!', 'warn');
+    AudioSys.error();
+    return;
+  }
+  
+  if (PROMO_CODES[code]) {
+    const reward = PROMO_CODES[code];
+    state.coins += reward;
+    state.usedPromos.push(code);
+    toast(`🎁 Промокод активирован! +${formatNum(reward)} монет!`, 'gold');
+    AudioSys.jackpot();
+    save(); render();
+    closePromo();
+  } else {
+    toast('❌ Неверный промокод!', 'warn');
+    AudioSys.error();
+  }
+};
+
+/* ================= КОЛЕСО ФОРТУНЫ ================= */
+const wheelPrizes = [
+  { label: '+10K 💰', type: 'coins', value: 10000, color: '#e74c3c', weight: 30 },
+  { label: '+50K 💰', type: 'coins', value: 50000, color: '#1abc9c', weight: 20 },
+  { label: '+500 XP', type: 'xp', value: 500, color: '#e67e22', weight: 15 },
+  { label: 'x2 Доход', type: 'buff_income', duration: 300000, color: '#3498db', weight: 15 },
+  { label: '+100K 💰', type: 'coins', value: 100000, color: '#f1c40f', weight: 10 },
+  { label: '+1M 💰', type: 'coins', value: 1000000, color: '#9b59b6', weight: 7 },
+  { label: 'ДЖЕКПОТ', type: 'jackpot', color: '#00ffff', weight: 2 },
+  { label: '🌟 БОЖ. ДАР', type: 'divine', color: '#ff00ff', weight: 1 }
+];
+let isSpinning = false;
+
+function getWheelCost() {
+  return Math.floor(10000 + state.level * 10000 + getIncome() * 200);
+}
+
+function initWheel() {
+  const wheel = $('wheel');
+  wheel.innerHTML = '';
+  const angleStep = 360 / wheelPrizes.length;
+  
+  wheelPrizes.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'wheel-segment';
+    el.style.transform = `rotate(${i * angleStep}deg)`;
+    el.style.background = p.color;
+    el.style.clipPath = 'polygon(0 0, 100% 0, 100% 100%)';
+    wheel.appendChild(el);
+    
+    const label = document.createElement('div');
+    label.className = 'wheel-text-overlay';
+    label.innerText = p.label;
+    const textAngle = i * angleStep + (angleStep / 2);
+    label.style.transform = `rotate(${textAngle}deg)`;
+    wheel.appendChild(label);
+  });
+}
+
+function getRandomWeightedIndex() {
+  const totalWeight = wheelPrizes.reduce((sum, prize) => sum + prize.weight, 0);
+  let random = Math.random() * totalWeight;
+  for (let i = 0; i < wheelPrizes.length; i++) {
+    if (random < wheelPrizes[i].weight) {
+      return i;
+    }
+    random -= wheelPrizes[i].weight;
+  }
+  return 0;
+}
+
+window.openWheel = () => {
+  $('wheelModal').style.display = 'flex';
+  if (!$('wheel').hasChildNodes()) initWheel();
+  updateWheelBtn();
+};
+
+window.closeWheel = () => { $('wheelModal').style.display = 'none'; };
+
+function updateWheelBtn() {
+  const now = Date.now();
+  const cost = getWheelCost();
+  $('wheelCost').innerText = formatNum(cost);
+  const cooldown = 300000 - (now - state.lastWheelSpin);
+  
+  if (cooldown > 0) {
+    const mins = Math.floor(cooldown / 60000);
+    const secs = Math.floor((cooldown % 60000) / 1000);
+    $('spinBtn').innerText = `ЖДИТЕ ${mins}:${secs.toString().padStart(2, '0')}`;
+    $('spinBtn').disabled = true;
+  } else {
+    $('spinBtn').innerText = 'КРУТИТЬ 🎰';
+    $('spinBtn').disabled = false;
+  }
+}
+
+window.spinWheel = () => {
+  const now = Date.now();
+  if (now - state.lastWheelSpin < 300000) return;
+  
+  const cost = getWheelCost();
+  if (state.coins < cost) { toast('Недостаточно монет!', 'warn'); return; }
+  
+  state.coins -= cost;
+  state.lastWheelSpin = now;
+  isSpinning = true;
+  $('spinBtn').disabled = true;
+  
+  AudioSys.wheelSpin();
+  
+  const winIndex = getRandomWeightedIndex();
+  const prize = wheelPrizes[winIndex];
+  
+  const angleStep = 360 / wheelPrizes.length;
+  const targetAngle = 360 * 5 + (360 - winIndex * angleStep - angleStep/2);
+  
+  const wheel = $('wheel');
+  wheel.style.transform = `rotate(${targetAngle}deg)`;
+  
+  setTimeout(() => {
+    isSpinning = false;
+    if (prize.type === 'coins') {
+      state.coins += prize.value;
+      toast(`Выигрыш: ${prize.label}!`, 'gold');
+    } else if (prize.type === 'xp') {
+      addXp(prize.value);
+      toast(`Выигрыш: ${prize.label}!`, 'gold');
+    } else if (prize.type === 'buff_income') {
+      state.coins += getIncome() * 300;
+      toast(`Выигрыш: Доход x2 (в виде монет)!`, 'gold');
+    } else if (prize.type === 'divine') {
+      const divineBonus = Math.floor(state.coins * 0.5) + 10000000;
+      state.coins += divineBonus;
+      toast(`🌟 БОЖЕСТВЕННЫЙ ДАР! +${formatNum(divineBonus)} монет!`, 'gold');
+      AudioSys.jackpot();
+    } else if (prize.type === 'jackpot') {
+      const jackpot = Math.floor(state.coins * 0.1) + 1000000;
+      state.coins += jackpot;
+      toast(`🎉 ДЖЕКПОТ! +${formatNum(jackpot)} монет!`, 'gold');
+      AudioSys.jackpot();
+    }
+    
+    if (prize.type !== 'divine' && prize.type !== 'jackpot') AudioSys.gold();
+    save(); render();
+    updateWheelBtn();
+    
+    setTimeout(() => {
+       wheel.style.transition = 'none';
+       wheel.style.transform = `rotate(0deg)`;
+       setTimeout(() => { wheel.style.transition = 'transform 4s cubic-bezier(0.25, 0.1, 0.25, 1)'; }, 50);
+    }, 1000);
+    
+  }, 4000);
+};
+
+/* ================= РЕНДЕР ================= */
+let lastReadyCount = 0;
+
+function render() {
+  $('coins').textContent = formatNum(state.coins);
+  $('level').textContent = state.level;
+  
+  const need = xpNeeded(state.level);
+  $('xp').textContent = formatNum(state.xp) + '/' + formatNum(need);
+  $('xpfill').style.width = Math.min(100, (state.xp / need) * 100) + '%';
+  
+  $('income').textContent = formatNum(getIncome()) + '/с';
+  $('menu-level').textContent = state.level;
+  $('menu-coins').textContent = formatNum(state.coins);
+
+  const now = Date.now();
+  const timeSinceAd = now - state.lastAdTime;
+  const cooldownLeft = Math.max(0, AD_COOLDOWN_MS - timeSinceAd);
+  if (cooldownLeft > 0) {
+    const mins = Math.floor(cooldownLeft / 60000);
+    const secs = Math.floor((cooldownLeft % 60000) / 1000);
+    $('adBtn').innerHTML = `⏳ ${mins}:${secs.toString().padStart(2, '0')}`;
+    $('adBtn').disabled = true;
+  } else {
+    $('adBtn').innerHTML = `🎁 +${formatNum(getAdReward())} 💰`;
+    $('adBtn').disabled = false;
+  }
+
+  if (state.plots.length >= MAX_PLOTS) {
+    $('buyPlotBtn').style.display = 'none';
+  } else {
+    $('buyPlotBtn').style.display = 'block';
+    const plotCost = 10000 * Math.pow(3, state.plots.length - 6);
+    $('buyPlotBtn').innerHTML = `➕ Поле (${formatNum(plotCost)} 💰)`;
+    $('buyPlotBtn').disabled = state.coins < plotCost;
+  }
+
+  if (state.level < 10) $('tabGreenhouse').style.opacity = '0.5';
+  else $('tabGreenhouse').style.opacity = '1';
+
+  const elP = $('plots'); 
+  if(elP.children.length !== state.plots.length) {
+    elP.innerHTML = '';
+    for(let i=0; i<state.plots.length; i++) {
+      const d = document.createElement('div'); d.className = 'plot';
+      d.onclick = () => {
+        if(!state.plots[i]) {
+          const c = CROPS.find(x => x.id === state.selectedCrop);
+          if(state.coins >= c.cost) { state.coins -= c.cost; state.plots[i] = { cropId: c.id, readyAt: Date.now() + (c.grow*1000)/getSpeedMult(), duration: (c.grow*1000)/getSpeedMult() }; AudioSys.plant(); save(); render(); }
+        } else if (Date.now() >= state.plots[i].readyAt) harvest(i);
+      };
+      elP.appendChild(d);
+    }
+  }
+  
+  let currentReadyCount = 0;
+  state.plots.forEach((p, i) => {
+    const d = elP.children[i];
+    if(!p) { d.className = 'plot empty'; d.innerHTML = '<div class="icon">➕</div>'; }
+    else {
+      const left = p.readyAt - Date.now();
+      const crop = CROPS.find(x => x.id === p.cropId);
+      if(left <= 0) { 
+        currentReadyCount++;
+        d.className = 'plot ready'; d.innerHTML = `<div class="icon">${crop.icon}</div><div>Собрать</div>`; 
+      }
+      else { 
+        d.className = 'plot growing'; 
+        const pct = ((p.duration - left)/p.duration)*100;
+        d.innerHTML = `<div class="icon">${crop.icon}</div><div class="timer">${Math.ceil(left/1000)}с</div><div class="bar"><div style="width:${pct}%"></div></div>`; 
+      }
+    }
+  });
+
+  if (currentReadyCount > lastReadyCount) {
+    if ($('pane-farm').classList.contains('active') === false && !state.hasAutoCollector) {
+      $('farmDot').style.display = 'block';
+      AudioSys.gold();
+    }
+  }
+  lastReadyCount = currentReadyCount;
+  if (currentReadyCount === 0) $('farmDot').style.display = 'none';
+
+  $('shop').innerHTML = CROPS.map(c => `
+    <div class="item" onclick="if(state.level>=${c.unlockLvl}){state.selectedCrop='${c.id}';render();}">
+      <div class="icon">${c.icon}</div>
+      <div class="info">
+        <div class="name" style="color:${c.rColor}; text-shadow: 0 0 6px ${c.rColor}60;">${c.name} ${state.level<c.unlockLvl?'<span class="badge">🔒 '+c.unlockLvl+' ур.</span>':''} <span class="rarity-badge" style="color:${c.rColor}; border:1px solid ${c.rColor}; background: ${c.rColor}22;">${c.rarity}</span></div>
+        <div class="desc">Цена: ${formatNum(c.cost)} · Рост: ${(c.grow/getSpeedMult()).toFixed(1)}с · XP: ${formatNum(c.xp)}</div>
+      </div>
+      <button class="${state.selectedCrop===c.id?'':'ghost'}">${state.selectedCrop===c.id?'✓':'Выбрать'}</button>
+    </div>
+  `).join('');
+
+  $('toolsList').innerHTML = TOOLS.map(t => {
+    if(t.id === 'hands') return '';
+    const lvl = state.tools[t.id] || 0;
+    const isMax = lvl >= t.maxLvl;
+    const actualWeight = t.weightPerLvl * Math.min(lvl, t.maxLvl);
+    
+    return `<div class="item" id="tool-row-${t.id}">
+      <div class="icon">${t.icon}</div>
+      <div class="info">
+        <div class="name" style="color:${t.rColor}; text-shadow: 0 0 6px ${t.rColor}60;">${t.name} <span class="badge">Ур. ${lvl}/${t.maxLvl}</span> <span class="rarity-badge" style="color:${t.rColor}; border:1px solid ${t.rColor}; background: ${t.rColor}22;">${t.rarity}</span></div>
+        <div class="desc">Макс. вес: +${actualWeight} кг</div>
+      </div>
+      <button class="buy" onclick="buyTool('${t.id}')" ${state.coins < t.cost * (lvl+1) || isMax ? 'disabled' : ''}>${isMax ? 'МАКС' : formatNum(t.cost*(lvl+1)) + ' 💰'}</button>
+    </div>`;
+  }).join('');
+
+  $('rarityUpgradesList').innerHTML = RARITY_UPGRADES.map(r => {
+    const lvl = state.rarityUp[r.id] || 0;
+    const cost = r.baseCost * Math.pow(r.mult, lvl);
+    const chance = ((r.baseChance + lvl*r.step)*100).toFixed(2);
+    return `<div class="item" id="rarity-row-${r.id}">
+      <div class="icon">${r.icon}</div>
+      <div class="info">
+        <div class="name">${r.name} <span class="badge">Ур. ${lvl}/${r.max}</span></div>
+        <div class="desc">Шанс: <span style="color:${r.color}; font-weight:900; font-size:14px; text-shadow: 0 0 6px ${r.color};">${chance}%</span></div>
+      </div>
+      <button class="buy" onclick="buyRarity('${r.id}')" ${lvl>=r.max||state.coins<cost?'disabled':''}>${lvl>=r.max?'МАКС':formatNum(cost)} 💰</button>
+    </div>`;
+  }).join('');
+
+  if (state.level < 10) {
+    $('greenhouseSlot').innerHTML = `<div style="text-align:center; padding:30px; background:#1c3b22; border-radius:12px; color:var(--muted); font-weight:800;">🔒 Откроется на 10 уровне</div>`;
+    $('greenhouseUpgradesList').innerHTML = '';
+  } else {
+    const gh = state.greenhouse;
+    if(!gh.planted) {
+      $('greenhouseSlot').innerHTML = `<button style="width:100%; max-width: 200px; padding:30px; border:2px dashed #66bb6a; background:transparent; color:#66bb6a; box-shadow:none;" onclick="plantGH()">🌱 Посадить семя (${state.selectedCrop})</button>`;
+    } else {
+      const left = gh.readyAt - Date.now();
+      const crop = CROPS.find(x => x.id === gh.planted);
+      if(left <= 0) { 
+        $('greenhouseSlot').innerHTML = `<div class="plot ready" style="width:100%; max-width: 150px; aspect-ratio: auto; padding: 20px; cursor: pointer;" onclick="harvestGH()"><div class="icon">${crop.icon}</div><div>СОБРАТЬ</div></div>`; 
+      } 
+      else { 
+        $('greenhouseSlot').innerHTML = `<div class="plot growing" style="width:100%; max-width: 150px; aspect-ratio: auto; padding: 20px;"><div class="icon">${crop.icon}</div><div class="timer">${Math.ceil(left/1000)}с</div><div class="bar"><div style="width:${Math.min(100, (15000 - left)/150)}%"></div></div></div>`; 
+      }
+    }
+    
+    $('greenhouseUpgradesList').innerHTML = GH_UPGRADES.map(u => {
+      const lvl = gh.upgrades[u.id] || 0;
+      const cost = u.baseCost * Math.pow(u.mult, lvl);
+      return `<div class="item" id="gh-row-${u.id}">
+        <div class="icon">${u.icon}</div>
+        <div class="info"><div class="name">${u.name} <span class="badge">Ур. ${lvl}/${u.max}</span></div><div class="desc">+${lvl*20}% к весу</div></div>
+        <button class="buy" onclick="buyGH('${u.id}')" ${lvl>=u.max||state.coins<cost?'disabled':''}>${lvl>=u.max?'МАКС':formatNum(cost)} 💰</button>
+      </div>`;
+    }).join('');
+  }
+
+  const totalAnimals = Object.values(state.animals).reduce((a,b)=>a+b,0);
+  const feedCost = 1000 + totalAnimals * 500;
+  let feedText = `🍎 Покормить (${formatNum(feedCost)} 💰) - x2 доход`;
+  if (state.feedEndTime && Date.now() < state.feedEndTime) {
+    const left = Math.ceil((state.feedEndTime - Date.now())/1000);
+    feedText = `🍎 Сытые (x2 доход) - ${left}с`;
+  }
+  $('feedBtn').innerHTML = feedText;
+  $('feedBtn').disabled = (totalAnimals === 0 || (state.feedEndTime && Date.now() < state.feedEndTime));
+
+  $('animalUpgradesList').innerHTML = ANIMAL_UPGRADES.map(u => {
+    const lvl = state.animalUpgrades[u.id] || 0;
+    const cost = u.baseCost * Math.pow(u.mult, lvl);
+    return `<div class="item" id="animal-upg-row-${u.id}">
+      <div class="icon">${u.icon}</div>
+      <div class="info"><div class="name">${u.name} <span class="badge">Ур. ${lvl}/${u.max}</span></div><div class="desc">${u.desc}</div></div>
+      <button class="buy" onclick="buyAnimalUpgrade('${u.id}')" ${lvl>=u.max||state.coins<cost?'disabled':''}>${lvl>=u.max?'МАКС':formatNum(cost)} 💰</button>
+    </div>`;
+  }).join('');
+
+  $('animalsList').innerHTML = ANIMALS.map(a => {
+    const cnt = state.animals[a.id] || 0;
+    const cost = getAnimalCost(a);
+    const locked = state.level < a.unlockLvl;
+    const limit = a.limit || 250;
+    const maxReached = cnt >= limit;
+    
+    let statusBadge = '';
+    if (locked) statusBadge = `<span class="badge" style="background:#ff6b6b; color:#fff; border:none;">🔒 ${a.unlockLvl} ур.</span>`;
+    else if (maxReached) statusBadge = `<span class="badge" style="background:#00ff00; color:#000; border:none;">МАКС</span>`;
+
+    return `<div class="item" id="animal-row-${a.id}">
+      <div class="icon">${a.icon}</div>
+      <div class="info">
+        <div class="name" style="color:${a.rColor}; text-shadow: 0 0 6px ${a.rColor}60;">${a.name} <span class="badge" style="background:rgba(0,0,0,0.5); color:#fff;">x${cnt} / ${limit}</span> ${statusBadge} <span class="rarity-badge" style="color:${a.rColor}; border:1px solid ${a.rColor}; background: ${a.rColor}22;">${a.rarity}</span></div>
+        <div class="desc">+${formatNum(a.income)}/с (база)</div>
+      </div>
+      <button class="buy" onclick="buyAnimal('${a.id}')" ${state.coins<cost||locked||maxReached?'disabled':''}>
+        ${maxReached ? 'ЛИМИТ' : formatNum(cost) + ' 💰'}
+      </button>
+    </div>`;
+  }).join('');
+
+  $('upgradesList').innerHTML = UPGRADES.map(u => {
+    const lvl = state.upgrades[u.id] || 0;
+    const cost = u.baseCost * Math.pow(u.mult, lvl);
+    return `<div class="item" id="upg-row-${u.id}">
+      <div class="icon">${u.icon}</div>
+      <div class="info"><div class="name">${u.name} <span class="badge">Ур. ${lvl}/${u.max}</span></div><div class="desc">${u.desc}</div></div>
+      <button class="buy" onclick="buyUpgrade('${u.id}')" ${lvl>=u.max||state.coins<cost?'disabled':''}>${lvl>=u.max?'МАКС':formatNum(cost)} 💰</button>
+    </div>`;
+  }).join('');
+
+  if (state.level < 30) {
+    $('prestigeList').innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted); font-weight:800;">Откроется на 30 уровне (сейчас: ${state.level})</div>`;
+  } else {
+    const gain = Math.floor(state.level / 10);
+    $('prestigeList').innerHTML = `
+      <div class="item" style="border-color:rgba(199,158,255,0.4); background: rgba(199,158,255,0.1);">
+        <div class="icon">✨</div>
+        <div class="info">
+          <div class="name" style="color:var(--purple);">Переродиться</div>
+          <div class="desc">Получить <b>+${gain} Звезд</b> (текущие: ${state.stars})</div>
+        </div>
+        <button onclick="doPrestige()" style="background:linear-gradient(180deg, #9b59b6, #71368a); box-shadow: 0 5px 0 #4a1c5c;">Сброс</button>
+      </div>`;
+  }
+
+  $('achievementsList').innerHTML = ACHIEVEMENTS.map(a => {
+    const unlocked = state.achievements[a.id] ? true : false;
+    return `<div class="ach-item ${unlocked ? 'unlocked' : ''}">
+      <div class="a-icon">${a.icon}</div>
+      <div>
+        <div class="a-name" style="color:${a.rColor}; text-shadow: 0 0 8px ${a.rColor}60;">${a.name} <span class="rarity-badge" style="color:${a.rColor}; border:1px solid ${a.rColor}; background: ${a.rColor}22;">${a.rarity}</span></div>
+        <div class="a-desc">${a.desc}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  if (state.hasAutoCollector) { const b = $('btn-autocollector'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
+  if (state.hasSpeedBooster) { const b = $('btn-speedbooster'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
+  if (state.isVip) { const b = $('btn-vip'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
+  
+  updateWheelBtn();
+}
+
+/* ================= ФУНКЦИИ ПОКУПОК ================= */
+window.buyTool = (id) => { 
+  const t=TOOLS.find(x=>x.id===id), lvl=state.tools[id]||0; 
+  if (lvl >= t.maxLvl) { toast('Максимальный уровень!', 'warn'); return; }
+  const c=t.cost*(lvl+1); 
+  if(state.coins>=c){
+    state.coins-=c; state.tools[id]=lvl+1; 
+    AudioSys.upgrade(); 
+    save(); render(); checkAchievements();
+    flashRow(`tool-row-${id}`);
+  } 
+};
+window.buyRarity = (id) => { 
+  const r=RARITY_UPGRADES.find(x=>x.id===id), lvl=state.rarityUp[id]||0; 
+  const c=r.baseCost*Math.pow(r.mult,lvl); 
+  if(state.coins>=c && lvl<r.max){
+    state.coins-=c; state.rarityUp[id]=lvl+1; 
+    AudioSys.upgrade(); 
+    flashScreen(r.color);
+    toast(`✨ Шанс на ${r.name} улучшен!`, 'rarity');
+    save(); render();
+    flashRow(`rarity-row-${id}`);
+  } 
+};
+window.buyGH = (id) => { 
+  const u=GH_UPGRADES.find(x=>x.id===id), lvl=state.greenhouse.upgrades[id]||0; 
+  const c=u.baseCost*Math.pow(u.mult,lvl); 
+  if(state.coins>=c && lvl<u.max){
+    state.coins-=c; state.greenhouse.upgrades[id]=lvl+1;
+    AudioSys.upgrade();
+    save(); render();
+    flashRow(`gh-row-${id}`);
+  } 
+};
+window.buyAnimal = (id) => { 
+  const a=ANIMALS.find(x=>x.id===id); 
+  const cnt = state.animals[id] || 0;
+  const limit = a.limit || 250;
+  if (cnt >= limit) {
+    toast('Достигнут максимум животных!', 'warn');
+    return;
+  }
+  const c=getAnimalCost(a); 
+  if(state.coins>=c){
+    state.coins-=c; state.animals[id]=cnt+1;
+    AudioSys.buy();
+    save(); render(); checkAchievements();
+    flashRow(`animal-row-${id}`);
+  } 
+};
+window.buyUpgrade = (id) => { 
+  const u=UPGRADES.find(x=>x.id===id), lvl=state.upgrades[id]||0; 
+  const c=u.baseCost*Math.pow(u.mult,lvl); 
+  if(state.coins>=c && lvl<u.max){
+    state.coins-=c; state.upgrades[id]=lvl+1;
+    AudioSys.upgrade();
+    save(); render();
+    flashRow(`upg-row-${id}`);
+  } 
+};
+window.buyAnimalUpgrade = (id) => { 
+  const u=ANIMAL_UPGRADES.find(x=>x.id===id), lvl=state.animalUpgrades[id]||0; 
+  const c=u.baseCost*Math.pow(u.mult,lvl); 
+  if(state.coins>=c && lvl<u.max){
+    state.coins-=c; state.animalUpgrades[id]=lvl+1;
+    AudioSys.upgrade();
+    save(); render(); checkAchievements();
+    flashRow(`animal-upg-row-${id}`);
+  } 
+};
+window.plantGH = () => {
+  const c = CROPS.find(x=>x.id===state.selectedCrop);
+  if(state.coins >= c.cost) {
+    state.coins -= c.cost;
+    state.greenhouse.planted = c.id;
+    state.greenhouse.readyAt = Date.now() + 15000;
+    AudioSys.plant(); save(); render();
+  }
+}
+window.harvestGH = () => {
+  const c = CROPS.find(x=>x.id===state.greenhouse.planted);
+  const upgMult = 1 + (state.greenhouse.upgrades.light + state.greenhouse.upgrades.soil + state.greenhouse.upgrades.fence) * 0.2;
+  const weight = Math.floor(Math.random() * 5000 * upgMult) + 1000;
+  const r = rollRarity();
+  const weightMult = 0.5 + (weight / 20);
+  const finalSell = Math.floor(c.sell * getValueMult() * r.mult * weightMult);
+  
+  state.coins += finalSell;
+  state.greenhouse.planted = null;
+  state.stats.ghHarvests++;
+  addXp(c.xp * 5);
+  checkAchievements();
+  AudioSys.gold();
+  toast(`🏡 Теплица: +${formatNum(finalSell)} 💰 (${weight}кг) ${r.icon}`, 'gold');
+  save(); render();
+}
+window.toast = (msg, type = '') => {
+  const el = document.createElement('div'); el.className = 'toast ' + type; 
+  el.innerHTML = msg;
+  $('toasts').appendChild(el); 
+  setTimeout(() => el.remove(), type === 'rarity' ? 2500 : 2000);
+};
+function flashRow(id) { const el = document.getElementById(id); if (el) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 600); } }
+function flashScreen(color) { const flash = document.createElement('div'); flash.style = `position:fixed; inset:0; background:${color}; opacity:0.15; z-index:9999; pointer-events:none; transition:opacity 0.5s ease-out;`; document.body.appendChild(flash); requestAnimationFrame(() => { flash.style.opacity = '0'; }); setTimeout(() => flash.remove(), 500); }
+
+/* ================= ПРЕСТИЖ ================= */
+window.doPrestige = () => {
+  if (state.level < 30) return;
+  if (!confirm('Вы уверены? Вы потеряете весь прогресс, но получите Звезды (+15% ко всему навсегда).')) return;
+  const gained = Math.floor(state.level / 10);
+  const oldAch = state.achievements; const oldStats = state.stats;
+  const oldDonat = { hasAutoCollector: state.hasAutoCollector, hasSpeedBooster: state.hasSpeedBooster, isVip: state.isVip };
+  
+  state = defaultState();
+  state.stars = gained; state.achievements = oldAch; state.stats = oldStats;
+  Object.assign(state, oldDonat); 
+  
+  AudioSys.gold();
+  toast(`✨ Перерождение! Вы получили ${gained} звезд!`, 'gold');
+  save(); render();
+};
+
+/* ================= ИВЕНТЫ ================= */
+function triggerEvent() {
+  if (state.activeEvent && Date.now() < state.activeEvent.endTime) return;
+  const rand = Math.random(); let type = ''; let dur = 120000;
+  if (rand < 0.4) {
+    type = 'golden_rain'; dur = (Math.random() * 3 + 2) * 60000;
+    state.activeEvent = { type, endTime: Date.now() + dur, multSpeed: Math.random() < 0.5 ? 2 : 3, multIncome: 4 };
+    toast('🌧 ЗОЛОТОЙ ДОЖДЬ! Скорость и Доход увеличены!', 'gold');
+  } else if (rand < 0.7) {
+    type = 'drought'; state.activeEvent = { type, endTime: Date.now() + dur };
+    toast('☀️ ЗАСУХА! Скорость роста снижена.', 'warn');
+  } else if (rand < 0.85) {
+    type = 'crows'; const stolen = Math.floor(state.coins * 0.05);
+    state.coins -= stolen; toast(`🦅 Вороны украли ${formatNum(stolen)} монет!`, 'warn');
+    state.activeEvent = null;
+  } else {
+    toast('🐝 Золотая пчела! Успей кликнуть!', 'gold'); spawnBee(); state.activeEvent = null;
+  }
+  if (state.activeEvent) {
+    $('eventBanner').style.display = 'block';
+    $('eventBanner').innerText = type === 'golden_rain' ? `🌧 ЗОЛОТОЙ ДОЖДЬ (x${state.activeEvent.multSpeed} скор, x4 доход)` : '☀️ ЗАСУХА (x0.5 скорость)';
+  }
+  render();
+}
+function spawnBee() {
+  const bee = document.createElement('div'); bee.innerHTML = '🐝';
+  bee.style = `position:fixed; font-size:50px; z-index:5000; cursor:pointer; top:${Math.random()*70+10}%; left:${Math.random()*80+10}%; transition: 0.5s; filter: drop-shadow(0 0 10px gold);`;
+  document.body.appendChild(bee);
+  bee.onclick = () => { const bonus = getIncome() * 300; state.coins += bonus; toast(`🐝 Поймал пчелу! +${formatNum(bonus)} монет`, 'gold'); AudioSys.gold(); bee.remove(); save(); render(); };
+  setTimeout(() => { if(document.body.contains(bee)) bee.remove(); }, 10000);
+}
+
+/* ================= АВТОСБОРЩИК ================= */
+setInterval(() => {
+  if (!gameStarted || !state.hasAutoCollector) return;
+  state.plots.forEach((p, i) => { if (p && Date.now() >= p.readyAt) harvest(i, true); });
+  save(); render();
+}, 10000); 
+
+/* ================= ИНТЕГРАЦИЯ TELEGRAM STARS ================= */
+window.buyStars = (productId) => {
+  if (!window.Telegram || !window.Telegram.WebApp) { alert('Оплата доступна только в приложении Telegram!'); return; }
+  const tg = window.Telegram.WebApp; toast('Создаем счет...', 'gold');
+  fetch('https://farm-server-8fyo.onrender.com/api/create-invoice', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.invoiceLink) {
+      tg.openInvoice(data.invoiceLink, (status) => {
+        if (status === 'paid') {
+          toast('✅ Оплата прошла! Спасибо!', 'gold');
+          setTimeout(() => { load(); }, 2000);
+        } else if (status === 'failed') { toast('❌ Ошибка оплаты', 'warn'); }
+        else if (status === 'cancelled') { toast('Оплата отменена', 'warn'); }
+      });
+    } else { toast('Ошибка сервера: ' + data.error, 'warn'); }
+  })
+  .catch(err => { console.error(err); toast('Ошибка соединения с сервером (возможно, он спит)', 'warn'); });
+};
+
+/* ================= ЦИКЛ ================= */
+load();
+setInterval(() => {
+  if(!gameStarted) return;
+  state.coins += getIncome() / 2;
+  render();
+  if(state.activeEvent && Date.now() > state.activeEvent.endTime) { state.activeEvent = null; $('eventBanner').style.display = 'none'; toast('Событие закончилось', 'warn'); }
+}, 500);
+
+setInterval(save, 3000);
+
+/* ================= ИНТЕРФЕЙС ================= */
+const bgContainer = $('floating-bg');
+const emojis = ['🍃', '🌾', '💰', '☁️', '🍂', '🌱'];
+function createFloatingItem() {
+  if (bgContainer.children.length > 20) return;
+  const el = document.createElement('div'); el.className = 'float-item';
+  el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+  el.style.left = Math.random() * 100 + 'vw';
+  el.style.animationDuration = (Math.random() * 10 + 10) + 's';
+  el.style.fontSize = (Math.random() * 20 + 15) + 'px';
+  el.style.animationDelay = Math.random() * 5 + 's';
+  bgContainer.appendChild(el);
+  setTimeout(() => { el.remove(); }, 15000); 
+}
+setInterval(createFloatingItem, 2000);
+for(let i=0; i<5; i++) createFloatingItem(); 
+
+const vineEmojis = ['🌿', '🍃', '🌱', '🌻', '🍀'];
+function createVines(containerId) {
+  const container = $(containerId);
+  for(let i=0; i<8; i++) {
+    const el = document.createElement('div'); el.className = 'vine-item';
+    el.textContent = vineEmojis[Math.floor(Math.random() * vineEmojis.length)];
+    el.style.top = (i * 12) + '%';
+    el.style.animationDelay = (Math.random() * 2) + 's';
+    el.style.fontSize = (Math.random() * 10 + 24) + 'px';
+    container.appendChild(el);
+  }
+}
+createVines('sideLeft'); createVines('sideRight');
+
+$('btn-play').onclick = () => { $('main-menu').style.opacity = '0'; setTimeout(()=>$('main-menu').style.display='none',300); $('game-container').style.display='block'; gameStarted = true; render(); };
+$('btn-daily').onclick = openDaily;
+$('btn-promo').onclick = openPromo;
+
+let musicOn = false;
+$('musicBtn').onclick = () => {
+  musicOn = AudioSys.toggleMusic();
+  $('musicBtn').innerText = `🎵 Музыка: ${musicOn ? 'Вкл' : 'Выкл'}`;
+};
+
+$('btn-reset-menu').onclick = () => {
+  if (confirm('Точно сбросить весь прогресс?')) {
+    localStorage.removeItem(SAVE_KEY); state = defaultState(); render(); toast('Сброшено!', 'warn');
+  }
+};
+
+$('menuBtn').onclick = () => { $('main-menu').style.display='flex'; setTimeout(()=>$('main-menu').style.opacity='1',10); $('game-container').style.display='none'; gameStarted = false; };
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.onclick = () => {
+    if(tab.dataset.tab === 'greenhouse' && state.level < 10) { toast('Теплица откроется на 10 уровне!', 'warn'); return; }
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active'); $('pane-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'farm') $('farmDot').style.display = 'none';
+    AudioSys.click();
+  };
+});
+
+$('feedBtn').onclick = feedAnimals;
+$('plantAllBtn').onclick = plantAll;
+$('harvestAllBtn').onclick = harvestAll;
+
+$('adBtn').onclick = () => {
+  if (typeof window.Adsgram === 'undefined') { alert('Реклама недоступна'); return; }
+  if (Date.now() - state.lastAdTime < AD_COOLDOWN_MS) { toast('Реклама еще не готова!', 'warn'); return; }
+  const AdController = window.Adsgram.init({ blockId: "58324" });
+  AdController.show().then(r => {
+    if (r.done) { const reward = getAdReward(); state.coins += reward; state.lastAdTime = Date.now(); toast(`+${formatNum(reward)} монет`, 'gold'); save(); render(); }
+  }).catch(e => console.log(e));
+};
+
+$('soundBtn').onclick = () => { let on = AudioSys.toggleSfx(); $('soundBtn').innerText = on ? '🔊' : '🔇'; };
+
+if (window.Telegram && window.Telegram.WebApp) { const tg = window.Telegram.WebApp; tg.expand(); tg.ready(); }
+</script>
+</body>
+</html>
