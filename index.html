@@ -1762,7 +1762,7 @@ $('adBtn').onclick = () => {
   if (typeof window.Adsgram === 'undefined') { alert('Реклама недоступна'); return; }
   if (Date.now() - state.lastAdTime < AD_COOLDOWN_MS) { toast('Реклама еще не готова!', 'warn'); return; }
   
-  const AdController = window.Adsgram.init({ blockId: "58324" });
+  const AdController = window.Adsgram.init({ blockId: "58574" });
   AdController.show().then(r => {
     if (r.done) {
       toast('⏳ Проверяем просмотр...', 'gold');
