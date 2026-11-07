@@ -1614,6 +1614,9 @@ function render() { if ($('refCount')) $('refCount').innerText = state.referralC
   if (state.hasAutoCollector) { const b = $('btn-autocollector'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
   if (state.hasSpeedBooster) { const b = $('btn-speedbooster'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
   if (state.isVip) { const b = $('btn-vip'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
+  if (state.hasGoldenShovel) { const b = document.querySelector('button[onclick="buyStars(\'golden_shovel\')"]'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
+  if (state.hasLifeElixir) { const b = document.querySelector('button[onclick="buyStars(\'life_elixir\')"]'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
+  if (state.hasBusinessCenter) { const b = document.querySelector('button[onclick="buyStars(\'business_center\')"]'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
     // Отрисовка квестов
   if ($('questsList')) {
     checkQuests();
