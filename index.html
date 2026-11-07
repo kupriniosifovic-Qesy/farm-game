@@ -1758,20 +1758,6 @@ window.doPrestige = () => {
   toast(`✨ Перерождение! Вы получили ${gained} звезд!`, 'gold');
   save(); render();
 };
-  if (state.level < 30) return;
-  if (!confirm('Вы уверены? Вы потеряете весь прогресс, но получите Звезды (+15% ко всему навсегда).')) return;
-  const gained = Math.floor(state.level / 10);
-  const oldAch = state.achievements; const oldStats = state.stats;
-  const oldDonat = { hasAutoCollector: state.hasAutoCollector, hasSpeedBooster: state.hasSpeedBooster, isVip: state.isVip };
-  
-  state = defaultState(referralCount: 0,referredBy: null,));
-  state.stars = gained; state.achievements = oldAch; state.stats = oldStats;
-  Object.assign(state, oldDonat); 
-  
-  AudioSys.gold();
-  toast(`✨ Перерождение! Вы получили ${gained} звезд!`, 'gold');
-  save(); render();
-};
 
 /* ================= ИВЕНТЫ ================= */
 function triggerEvent() {
