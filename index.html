@@ -394,6 +394,7 @@
     <div class="tab" data-tab="achievements">🏆 Награды</div>
     <div class="tab" data-tab="guide">📖 Гайд</div>
     <div class="tab" data-tab="quests">📜 Квесты</div>
+    <div class="tab" data-tab="friends">🤝 Друзья</div>
     <div class="tab donate" data-tab="stars">⭐ Донат</div>
   </div>
 
@@ -518,7 +519,22 @@
       <div class="shop" id="questsList"></div>
     </div>
   </div>
+  <!-- ДРУЗЬЯ (РЕФЕРАЛКА) -->
+  <div class="pane" id="pane-friends">
+    <div class="field" style="border-color: #2AABEE;">
+      <div class="field-head"><h2 style="color: #2AABEE;">🤝 Пригласи друзей</h2></div>
+      <p style="font-size:14px; color:var(--muted); margin-bottom:15px; font-weight:700;">Пригласи друга, и когда он достигнет 3 уровня, вы <b>ОБА</b> получите по 500 000 монет!</p>
+      
+      <button onclick="inviteFriend()" style="width:100%; padding:15px; font-size:16px; background:linear-gradient(180deg, #2AABEE, #1E88E5); box-shadow: 0 5px 0 #1565C0; color: #fff; margin-bottom: 15px;">
+        🔗 Пригласить друга
+      </button>
 
+      <div style="text-align:center; background:rgba(0,0,0,0.5); padding:15px; border-radius:12px;">
+        <div style="font-size:12px; color:var(--muted); font-weight:800; text-transform:uppercase;">Приглашено друзей</div>
+        <div style="font-size:32px; font-weight:900; color:var(--gold);" id="refCount">0</div>
+      </div>
+    </div>
+  </div>
   <!-- ДОНАТ ЗА ЗВЕЗДЫ -->
   <div class="pane" id="pane-stars">
     <div class="field">
@@ -1356,7 +1372,15 @@ window.claimQuest = (type) => {
     toast('❌ Условия квеста еще не выполнены!', 'warn');
   }
 };
-function render() {
+  window.inviteFriend = () => {
+  if (!window.Telegram || !window.Telegram.WebApp) return;
+  const userId = window.Telegram.WebApp.initDataUnsafe?.user?.id;
+  if (!userId) return;
+  
+  const refLink = `https://t.me/QesyFarmBot?start=ref_${userId}`;
+  window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=🌾 Заходи в Ферму: Империю! Получи бонус новичка и построй свою империю!`);
+};
+function render() { if ($('refCount')) $('refCount').innerText = state.referralCount || 0;
   $('coins').textContent = formatNum(state.coins);
   $('level').textContent = state.level;
   
@@ -1725,7 +1749,7 @@ window.doPrestige = () => {
   const oldAch = state.achievements; const oldStats = state.stats;
   const oldDonat = { hasAutoCollector: state.hasAutoCollector, hasSpeedBooster: state.hasSpeedBooster, isVip: state.isVip };
   
-  state = defaultState();
+  state = defaultState(referralCount: 0,referredBy: null,));
   state.stars = gained; state.achievements = oldAch; state.stats = oldStats;
   Object.assign(state, oldDonat); 
   
