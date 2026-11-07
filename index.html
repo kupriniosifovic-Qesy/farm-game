@@ -385,13 +385,15 @@
     <div class="stat income"><div class="label">📈 Доход</div><div class="value" id="income">0/с</div></div>
   </div>
 
-  <div class="tabs">
+  <div class="tab" data-tabs">
     <div class="tab active" data-tab="farm"><div class="notification-dot" id="farmDot"></div>🌱 Ферма</div>
     <div class="tab" data-tab="tools">🛠 Инвентарь</div>
     <div class="tab" data-tab="greenhouse" id="tabGreenhouse">🏡 Теплица</div>
     <div class="tab" data-tab="animals">🐔 Животные</div>
     <div class="tab" data-tab="upgrades">⚡ Улучшения</div>
     <div class="tab" data-tab="achievements">🏆 Награды</div>
+    <div class="tab" data-tab="guide">📖 Гайд</div>
+    <div class="tab" data-tab="quests">📜 Квесты</div>
     <div class="tab donate" data-tab="stars">⭐ Донат</div>
   </div>
 
@@ -477,6 +479,43 @@
     <div class="field">
       <div class="field-head"><h2>🏆 Твои награды</h2></div>
       <div class="shop" id="achievementsList"></div>
+    </div>
+  </div>
+    <!-- ГАЙД -->
+  <div class="pane" id="pane-guide">
+    <div class="field">
+      <div class="field-head"><h2>📖 Справочник фермера</h2></div>
+      <div class="shop" style="display: block;">
+        
+        <details style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; margin-bottom: 10px; cursor: pointer;">
+          <summary style="font-weight: 900; color: var(--accent);">🌱 Как зарабатывать монеты?</summary>
+          <p style="margin-top: 10px; color: var(--muted); font-size: 14px; line-height: 1.5;">Покупай семена на вкладке «Ферма», сажай их и собирай урожай. Чем выше уровень семян, тем больше монет ты получишь. Также животные дают пассивный доход каждую секунду.</p>
+        </details>
+
+        <details style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; margin-bottom: 10px; cursor: pointer;">
+          <summary style="font-weight: 900; color: var(--blue);">🛠 Зачем нужен вес урожая?</summary>
+          <p style="margin-top: 10px; color: var(--muted); font-size: 14px; line-height: 1.5;">Вес напрямую влияет на цену продажи. Инструменты (Ведро, Лейка, Дрон) увеличивают максимальный вес урожая. Прокачивай их во вкладке «Инвентарь».</p>
+        </details>
+
+        <details style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; margin-bottom: 10px; cursor: pointer;">
+          <summary style="font-weight: 900; color: var(--gold);">✨ Что такое Престиж?</summary>
+          <p style="margin-top: 10px; color: var(--muted); font-size: 14px; line-height: 1.5;">Это «Новая игра+». Достигнув 30 уровня, ты можешь сбросить весь прогресс, но получишь Звезды. Каждая звезда навсегда увеличивает весь твой доход на 15%. Это главный путь к миллиардам!</p>
+        </details>
+
+        <details style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; margin-bottom: 10px; cursor: pointer;">
+          <summary style="font-weight: 900; color: var(--purple);">⭐ Зачем покупать Stars?</summary>
+          <p style="margin-top: 10px; color: var(--muted); font-size: 14px; line-height: 1.5;">Stars — официальная валюта Telegram. Покупая их, ты поддерживаешь разработку игры. За Stars можно купить Вечный автосборщик, ускоритель роста или VIP-статус, которые остаются с тобой навсегда, даже после Престижа.</p>
+        </details>
+
+      </div>
+    </div>
+  </div>
+    <!-- КВЕСТЫ -->
+  <div class="pane" id="pane-quests">
+    <div class="field">
+      <div class="field-head"><h2>📜 Ежедневные и еженедельные задания</h2></div>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:15px; font-weight:700;">Выполняй задания и получай крупные награды! Ежедневные сбрасываются каждый день, еженедельные — раз в неделю.</p>
+      <div class="shop" id="questsList"></div>
     </div>
   </div>
 
@@ -780,6 +819,7 @@ function defaultState() {
     hasAutoCollector: false,
     hasSpeedBooster: false,
     isVip: false
+        quests: { daily: null, weekly: null, dailyTime: 0, weeklyTime: 0, dailyClaimed: false, weeklyClaimed: false },
   };
 }
 
@@ -1263,7 +1303,59 @@ window.spinWheel = () => {
 
 /* ================= РЕНДЕР ================= */
 let lastReadyCount = 0;
+// ==================== КВЕСТЫ ====================
+const DAILY_POOL = [
+  { id: 'd_harv', type: 'harvest', target: 30, reward: 50000, text: 'Собери 30 урожаев' },
+  { id: 'd_animals', type: 'animals', target: 5, reward: 100000, text: 'Купи 5 любых животных' },
+  { id: 'd_plant', type: 'harvest', target: 15, reward: 30000, text: 'Посади и собери 15 растений' }
+];
+const WEEKLY_POOL = [
+  { id: 'w_harv', type: 'harvest', target: 300, reward: 1000000, text: 'Собери 300 урожаев' },
+  { id: 'w_lvl', type: 'level', target: 5, reward: 500000, text: 'Достигни 5 уровня' }
+];
 
+function getQuestProgress(type, target) {
+  if (type === 'harvest') return Math.min(state.stats.harvests, target);
+  if (type === 'animals') return Math.min(Object.values(state.animals).reduce((a,b)=>a+b,0), target);
+  if (type === 'level') return Math.min(state.level, target);
+  return 0;
+}
+
+function checkQuests() {
+  const now = Date.now();
+  if (!state.quests) state.quests = { daily: null, weekly: null, dailyTime: 0, weeklyTime: 0, dailyClaimed: false, weeklyClaimed: false };
+
+  // Ежедневные (24 часа)
+  if (now - state.quests.dailyTime > 24 * 60 * 60 * 1000) {
+    state.quests.daily = DAILY_POOL[Math.floor(Math.random() * DAILY_POOL.length)];
+    state.quests.dailyTime = now;
+    state.quests.dailyClaimed = false;
+  }
+  // Еженедельные (7 дней)
+  if (now - state.quests.weeklyTime > 7 * 24 * 60 * 60 * 1000) {
+    state.quests.weekly = WEEKLY_POOL[Math.floor(Math.random() * WEEKLY_POOL.length)];
+    state.quests.weeklyTime = now;
+    state.quests.weeklyClaimed = false;
+  }
+}
+
+window.claimQuest = (type) => {
+  const q = type === 'daily' ? state.quests.daily : state.quests.weekly;
+  const claimed = type === 'daily' ? state.quests.dailyClaimed : state.quests.weeklyClaimed;
+  if (!q || claimed) return;
+
+  const current = getQuestProgress(q.type, q.target);
+  if (current >= q.target) {
+    state.coins += q.reward;
+    if (type === 'daily') state.quests.dailyClaimed = true;
+    else state.quests.weeklyClaimed = true;
+    toast(`🎁 Квест выполнен! +${formatNum(q.reward)} монет`, 'gold');
+    AudioSys.gold();
+    save(); render();
+  } else {
+    toast('❌ Условия квеста еще не выполнены!', 'warn');
+  }
+};
 function render() {
   $('coins').textContent = formatNum(state.coins);
   $('level').textContent = state.level;
@@ -1496,7 +1588,27 @@ function render() {
   if (state.hasAutoCollector) { const b = $('btn-autocollector'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
   if (state.hasSpeedBooster) { const b = $('btn-speedbooster'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
   if (state.isVip) { const b = $('btn-vip'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
-  
+    // Отрисовка квестов
+  if ($('questsList')) {
+    checkQuests();
+    const renderQuestItem = (type, q, claimed) => {
+      if (!q) return '<div style="padding:15px; color:var(--muted); text-align:center;">Загрузка...</div>';
+      const progress = getQuestProgress(q.type, q.target);
+      const isDone = progress >= q.target;
+      return `
+        <div class="item">
+          <div class="info">
+            <div class="name">${type === 'daily' ? '📅 Ежедневный' : '📆 Еженедельный'}</div>
+            <div class="desc">${q.text} <br><span style="color:${isDone ? 'var(--accent)' : 'var(--gold)'}; font-weight:900;">${progress} / ${q.target}</span></div>
+          </div>
+          <button class="buy" onclick="claimQuest('${type}')" ${claimed || !isDone ? 'disabled' : ''}>
+            ${claimed ? '✅ Получено' : formatNum(q.reward) + ' 💰'}
+          </button>
+        </div>
+      `;
+    };
+    $('questsList').innerHTML = renderQuestItem('daily', state.quests.daily, state.quests.dailyClaimed) + renderQuestItem('weekly', state.quests.weekly, state.quests.weeklyClaimed);
+  }
   updateWheelBtn();
 }
 
