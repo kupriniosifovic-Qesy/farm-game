@@ -1761,9 +1761,17 @@ $('harvestAllBtn').onclick = harvestAll;
 $('adBtn').onclick = () => {
   if (typeof window.Adsgram === 'undefined') { alert('Реклама недоступна'); return; }
   if (Date.now() - state.lastAdTime < AD_COOLDOWN_MS) { toast('Реклама еще не готова!', 'warn'); return; }
+  
   const AdController = window.Adsgram.init({ blockId: "58324" });
   AdController.show().then(r => {
-    if (r.done) { const reward = getAdReward(); state.coins += reward; state.lastAdTime = Date.now(); toast(`+${formatNum(reward)} монет`, 'gold'); save(); render(); }
+    if (r.done) {
+      toast('⏳ Проверяем просмотр...', 'gold');
+      // Ждем 2 секунды, чтобы сервер успел получить запрос от Adsgram и начислить монеты
+      setTimeout(() => {
+        load(); // Загружаем актуальное состояние с сервера (монеты уже придут оттуда)
+        toast('🎁 Награда получена!', 'gold');
+      }, 2000);
+    }
   }).catch(e => console.log(e));
 };
 
