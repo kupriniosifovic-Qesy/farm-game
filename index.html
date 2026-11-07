@@ -832,6 +832,9 @@ function defaultState() {
     hasSpeedBooster: false,
     isVip: false,
     quests: { daily: null, weekly: null, dailyTime: 0, weeklyTime: 0, dailyClaimed: false, weeklyClaimed: false },
+    referralCount: 0,
+    referredBy: null,
+    referralRewarded: false
   };
 }
 
@@ -1739,6 +1742,22 @@ function flashScreen(color) { const flash = document.createElement('div'); flash
 
 /* ================= ПРЕСТИЖ ================= */
 window.doPrestige = () => {
+  if (state.level < 30) return;
+  if (!confirm('Вы уверены? Вы потеряете весь прогресс, но получите Звезды (+15% ко всему навсегда).')) return;
+  const gained = Math.floor(state.level / 10);
+  const oldAch = state.achievements; const oldStats = state.stats;
+  const oldDonat = { hasAutoCollector: state.hasAutoCollector, hasSpeedBooster: state.hasSpeedBooster, isVip: state.isVip };
+  const oldRef = { referralCount: state.referralCount || 0, referredBy: state.referredBy, referralRewarded: state.referralRewarded }; // Сохраняем рефералов
+  
+  state = defaultState(); // Убрали лишние аргументы
+  state.stars = gained; state.achievements = oldAch; state.stats = oldStats;
+  Object.assign(state, oldDonat); 
+  Object.assign(state, oldRef); // Возвращаем рефералов обратно
+  
+  AudioSys.gold();
+  toast(`✨ Перерождение! Вы получили ${gained} звезд!`, 'gold');
+  save(); render();
+};
   if (state.level < 30) return;
   if (!confirm('Вы уверены? Вы потеряете весь прогресс, но получите Звезды (+15% ко всему навсегда).')) return;
   const gained = Math.floor(state.level / 10);
