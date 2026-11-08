@@ -836,6 +836,15 @@ function defaultState() {
 
 async function load() {
   state = defaultState();
+  // ЗАЩИТА ОТ UNDEFINED:
+                      if (!state.usedPromos) state.usedPromos = [];
+                      if (!state.stats) state.stats = { harvests: 0, ghHarvests: 0, rainbow: 0, coinsSpent: 0, wheelSpins: 0 };
+                      if (!state.animalUpgrades) state.animalUpgrades = {};
+
+                      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+                      applyOffline();
+                      return;
+                    }
 
   if (initData) {
     try {
@@ -1125,9 +1134,27 @@ window.closeDaily = () => { $('dailyModal').style.display = 'none'; };
 function updateDailyUI() {
   const now = Date.now();
   const msInDay = 86400000;
-  const timeSince = now - state.lastDailyClaim;
+  const timeSince = now - (state.lastDailyClaim || 0);
   const streakText = $('dailyStreakText');
   const claimBtn = $('claimDailyBtn');
+
+  if (!state.lastDailyClaim) {
+    streakText.innerText = "1 день (старт)";
+    claimBtn.innerText = "ЗАБРАТЬ НАГРАДУ";
+    claimBtn.disabled = false;
+  } else if (timeSince < msInDay) {
+    const left = msInDay - timeSince;
+    const h = Math.floor(left / 3600000);
+    const m = Math.floor((left % 3600000) / 60000);
+    streakText.innerText = `${state.dailyStreak || 1} дней`;
+    claimBtn.innerText = `ЖДИТЕ ${h}ч ${m}м`;
+    claimBtn.disabled = true;
+  } else {
+    streakText.innerText = `${state.dailyStreak || 1} дней`;
+    claimBtn.innerText = "ЗАБРАТЬ НАГРАДУ";
+    claimBtn.disabled = false;
+  }
+}
 
   if (state.lastDailyClaim === 0) {
     streakText.innerText = "1 день (старт)";
@@ -1148,31 +1175,36 @@ function updateDailyUI() {
 }
 
 $('claimDailyBtn').onclick = () => {
-  const now = Date.now();
-  const msInDay = 86400000;
-  const timeSince = now - state.lastDailyClaim;
+  try {
+    const now = Date.now();
+    const msInDay = 86400000;
+    const timeSince = now - (state.lastDailyClaim || 0);
 
-  if (state.lastDailyClaim !== 0 && timeSince < msInDay) return;
+    if (state.lastDailyClaim && timeSince < msInDay) return;
 
-  if (state.lastDailyClaim === 0) {
-    state.dailyStreak = 1;
-  } else {
-    const daysPassed = Math.floor(timeSince / msInDay);
-    if (daysPassed === 1) state.dailyStreak++;
-    else state.dailyStreak = 1;
+    if (!state.lastDailyClaim) {
+      state.dailyStreak = 1;
+    } else {
+      const daysPassed = Math.floor(timeSince / msInDay);
+      if (daysPassed === 1) state.dailyStreak = (state.dailyStreak || 0) + 1;
+      else state.dailyStreak = 1;
+    }
+
+    const baseReward = Math.max(10000, getIncome() * 3600 * 2);
+    const streakBonus = 1 + (state.dailyStreak * 0.5);
+    const finalReward = Math.floor(baseReward * streakBonus);
+
+    state.coins += finalReward;
+    state.lastDailyClaim = now;
+
+    toast(`🎁 Ежедневный бонус: +${formatNum(finalReward)} монет! (Серия: ${state.dailyStreak})`, 'gold');
+    try { AudioSys.jackpot(); } catch(e) {}
+    save(); render();
+    closeDaily();
+  } catch (err) {
+    console.error('Ошибка ежедневного бонуса:', err);
+    toast('Произошла ошибка при получении бонуса.', 'warn');
   }
-
-  const baseReward = Math.max(10000, getIncome() * 3600 * 2);
-  const streakBonus = 1 + (state.dailyStreak * 0.5);
-  const finalReward = Math.floor(baseReward * streakBonus);
-
-  state.coins += finalReward;
-  state.lastDailyClaim = now;
-  
-  toast(`🎁 Ежедневный бонус: +${formatNum(finalReward)} монет! (Серия: ${state.dailyStreak})`, 'gold');
-  AudioSys.jackpot();
-  save(); render();
-  closeDaily();
 };
 
 /* ================= ПРОМОКОДЫ ================= */
@@ -1180,26 +1212,34 @@ window.openPromo = () => { $('promoModal').style.display = 'flex'; $('promoInput
 window.closePromo = () => { $('promoModal').style.display = 'none'; };
 
 $('applyPromoBtn').onclick = () => {
-  const code = $('promoInput').value.toUpperCase().trim();
-  if (!code) return;
-  
-  if (state.usedPromos.includes(code)) {
-    toast('❌ Вы уже использовали этот промокод!', 'warn');
-    AudioSys.error();
-    return;
-  }
-  
-  if (PROMO_CODES[code]) {
-    const reward = PROMO_CODES[code];
-    state.coins += reward;
-    state.usedPromos.push(code);
-    toast(`🎁 Промокод активирован! +${formatNum(reward)} монет!`, 'gold');
-    AudioSys.jackpot();
-    save(); render();
-    closePromo();
-  } else {
-    toast('❌ Неверный промокод!', 'warn');
-    AudioSys.error();
+  try {
+    const code = $('promoInput').value.toUpperCase().trim();
+    if (!code) return;
+    
+    // Защита от undefined
+    if (!state.usedPromos) state.usedPromos = [];
+
+    if (state.usedPromos.includes(code)) {
+      toast('❌ Вы уже использовали этот промокод!', 'warn');
+      try { AudioSys.error(); } catch(e) {}
+      return;
+    }
+
+    if (PROMO_CODES[code]) {
+      const reward = PROMO_CODES[code];
+      state.coins += reward;
+      state.usedPromos.push(code);
+      toast(`🎁 Промокод активирован! +${formatNum(reward)} монет!`, 'gold');
+      try { AudioSys.jackpot(); } catch(e) {}
+      save(); render();
+      closePromo();
+    } else {
+      toast('❌ Неверный промокод!', 'warn');
+      try { AudioSys.error(); } catch(e) {}
+    }
+  } catch (err) {
+    console.error('Ошибка промокода:', err);
+    toast('Произошла ошибка. Попробуйте еще раз.', 'warn');
   }
 };
 
