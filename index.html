@@ -1054,8 +1054,9 @@ window.buyPlot = () => {
     return;
   }
   const cost = 10000 * Math.pow(3, state.plots.length - 6);
-  if (state.coins >= cost) {
+    if (state.coins >= cost) {
     state.coins -= cost;
+    state.stats.coinsSpent = (state.stats.coinsSpent || 0) + cost; // <--- Тут cost, а не c!
     state.plots.push(null);
     toast('Куплено новое поле!', 'gold');
     AudioSys.upgrade();
@@ -1281,8 +1282,10 @@ window.spinWheel = () => {
   const cost = getWheelCost();
   if (state.coins < cost) { toast('Недостаточно монет!', 'warn'); return; }
   
-  state.coins -= cost;
+   state.coins -= cost;
   state.lastWheelSpin = now;
+  state.stats.wheelSpins = (state.stats.wheelSpins || 0) + 1; // <--- НОВАЯ СТРОЧКА
+  state.stats.wheelSpins = (state.stats.wheelSpins || 0) + 1;
   isSpinning = true;
   $('spinBtn').disabled = true;
   
@@ -1337,19 +1340,27 @@ window.spinWheel = () => {
 let lastReadyCount = 0;
 // ==================== КВЕСТЫ ====================
 const DAILY_POOL = [
-  { id: 'd_harv', type: 'harvest', target: 30, reward: 50000, text: 'Собери 30 урожаев' },
-  { id: 'd_animals', type: 'animals', target: 5, reward: 100000, text: 'Купи 5 любых животных' },
-  { id: 'd_plant', type: 'harvest', target: 15, reward: 30000, text: 'Посади и собери 15 растений' }
+  { id: 'd_harv', type: 'harvest', target: 100, reward: 1500000, text: 'Собери 100 урожаев' },
+  { id: 'd_animals', type: 'animals', target: 20, reward: 2500000, text: 'Купи 20 любых животных' },
+  { id: 'd_lvl', type: 'level', target: 15, reward: 3000000, text: 'Достигни 15 уровня' },
+  { id: 'd_wheel', type: 'wheel', target: 1, reward: 1000000, text: 'Прокрути Колесо Фортуны 1 раз' },
+  { id: 'd_spend', type: 'spend', target: 5000000, reward: 2000000, text: 'Потрать 5 000 000 монет' }
 ];
+
 const WEEKLY_POOL = [
-  { id: 'w_harv', type: 'harvest', target: 300, reward: 1000000, text: 'Собери 300 урожаев' },
-  { id: 'w_lvl', type: 'level', target: 5, reward: 500000, text: 'Достигни 5 уровня' }
+  { id: 'w_harv', type: 'harvest', target: 1000, reward: 25000000, text: 'Собери 1000 урожаев' },
+  { id: 'w_animals', type: 'animals', target: 100, reward: 50000000, text: 'Купи 100 любых животных' },
+  { id: 'w_lvl', type: 'level', target: 25, reward: 75000000, text: 'Достигни 25 уровня' },
+  { id: 'w_prestige', type: 'prestige', target: 1, reward: 100000000, text: 'Сделай 1 Перерождение (Престиж)' }
 ];
 
 function getQuestProgress(type, target) {
   if (type === 'harvest') return Math.min(state.stats.harvests, target);
   if (type === 'animals') return Math.min(Object.values(state.animals).reduce((a,b)=>a+b,0), target);
   if (type === 'level') return Math.min(state.level, target);
+  if (type === 'wheel') return Math.min(state.stats.wheelSpins || 0, target);
+  if (type === 'spend') return Math.min(state.stats.coinsSpent || 0, target);
+  if (type === 'prestige') return Math.min(state.stars || 0, target);
   return 0;
 }
 
@@ -1660,8 +1671,11 @@ window.buyTool = (id) => {
   const t=TOOLS.find(x=>x.id===id), lvl=state.tools[id]||0; 
   if (lvl >= t.maxLvl) { toast('Максимальный уровень!', 'warn'); return; }
   const c=t.cost*(lvl+1); 
-  if(state.coins>=c){
-    state.coins-=c; state.tools[id]=lvl+1; 
+    if(state.coins>=c){
+    state.coins-=c; 
+    state.stats.coinsSpent = (state.stats.coinsSpent || 0) + c; // <--- НОВАЯ СТРОЧКА
+    state.tools[id]=lvl+1; 
+    // ...
     AudioSys.upgrade(); 
     save(); render(); checkAchievements();
     flashRow(`tool-row-${id}`);
@@ -1670,8 +1684,10 @@ window.buyTool = (id) => {
 window.buyRarity = (id) => { 
   const r=RARITY_UPGRADES.find(x=>x.id===id), lvl=state.rarityUp[id]||0; 
   const c=r.baseCost*Math.pow(r.mult,lvl); 
-  if(state.coins>=c && lvl<r.max){
-    state.coins-=c; state.rarityUp[id]=lvl+1; 
+    if(state.coins>=c && lvl<r.max){
+    state.coins-=c; 
+    state.stats.coinsSpent = (state.stats.coinsSpent || 0) + c;
+    state.rarityUp[id]=lvl+1; 
     AudioSys.upgrade(); 
     flashScreen(r.color);
     toast(`✨ Шанс на ${r.name} улучшен!`, 'rarity');
@@ -1682,8 +1698,10 @@ window.buyRarity = (id) => {
 window.buyGH = (id) => { 
   const u=GH_UPGRADES.find(x=>x.id===id), lvl=state.greenhouse.upgrades[id]||0; 
   const c=u.baseCost*Math.pow(u.mult,lvl); 
-  if(state.coins>=c && lvl<u.max){
-    state.coins-=c; state.greenhouse.upgrades[id]=lvl+1;
+   if(state.coins>=c && lvl<u.max){
+    state.coins-=c; 
+    state.stats.coinsSpent = (state.stats.coinsSpent || 0) + c;
+    state.greenhouse.upgrades[id]=lvl+1;
     AudioSys.upgrade();
     save(); render();
     flashRow(`gh-row-${id}`);
@@ -1698,8 +1716,11 @@ window.buyAnimal = (id) => {
     return;
   }
   const c=getAnimalCost(a); 
-  if(state.coins>=c){
-    state.coins-=c; state.animals[id]=cnt+1;
+   if(state.coins>=c){
+    state.coins-=c; 
+    state.stats.coinsSpent = (state.stats.coinsSpent || 0) + c; // <--- ВОТ ЭТА СТРОКА
+    state.animals[id]=cnt+1;
+    AudioSys.buy();
     AudioSys.buy();
     save(); render(); checkAchievements();
     flashRow(`animal-row-${id}`);
@@ -1708,8 +1729,10 @@ window.buyAnimal = (id) => {
 window.buyUpgrade = (id) => { 
   const u=UPGRADES.find(x=>x.id===id), lvl=state.upgrades[id]||0; 
   const c=u.baseCost*Math.pow(u.mult,lvl); 
-  if(state.coins>=c && lvl<u.max){
-    state.coins-=c; state.upgrades[id]=lvl+1;
+    if(state.coins>=c && lvl<u.max){
+    state.coins-=c; 
+    state.stats.coinsSpent = (state.stats.coinsSpent || 0) + c;
+    state.upgrades[id]=lvl+1;
     AudioSys.upgrade();
     save(); render();
     flashRow(`upg-row-${id}`);
@@ -1718,8 +1741,10 @@ window.buyUpgrade = (id) => {
 window.buyAnimalUpgrade = (id) => { 
   const u=ANIMAL_UPGRADES.find(x=>x.id===id), lvl=state.animalUpgrades[id]||0; 
   const c=u.baseCost*Math.pow(u.mult,lvl); 
-  if(state.coins>=c && lvl<u.max){
-    state.coins-=c; state.animalUpgrades[id]=lvl+1;
+    if(state.coins>=c && lvl<u.max){
+    state.coins-=c; 
+    state.stats.coinsSpent = (state.stats.coinsSpent || 0) + c;
+    state.animalUpgrades[id]=lvl+1;
     AudioSys.upgrade();
     save(); render(); checkAchievements();
     flashRow(`animal-upg-row-${id}`);
