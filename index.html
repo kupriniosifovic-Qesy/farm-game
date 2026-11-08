@@ -901,11 +901,35 @@ const xpNeeded = lvl => Math.floor(150 * Math.pow(1.65, lvl - 1));
 
 function formatNum(num) {
   if (num < 1000) return Math.floor(num).toString();
+  
+  // Убираем лишние пробелы для чисел до миллиона
   if (num < 1000000) return Math.floor(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-  if (num < 1e9) return (num / 1e6).toFixed(1) + 'M';
-  return (num / 1e9).toFixed(1) + 'B';
+  
+  const units = [
+    { value: 1e6, symbol: 'M' },  // Миллионы
+    { value: 1e9, symbol: 'B' },  // Миллиарды
+    { value: 1e12, symbol: 'T' }, // Триллионы
+    { value: 1e15, symbol: 'Qa' },// Квадриллионы
+    { value: 1e18, symbol: 'Qi' },// Квинтиллионы
+    { value: 1e21, symbol: 'Sx' },// Секстиллионы
+    { value: 1e24, symbol: 'Sp' },// Септиллионы
+    { value: 1e27, symbol: 'Oc' },// Октиллионы
+    { value: 1e30, symbol: 'No' },// Нониллионы
+    { value: 1e33, symbol: 'Dc' } // Дециллионы
+  ];
+  
+  // Идем с конца, чтобы найти самое большое подходящее сокращение
+  for (let i = units.length - 1; i >= 0; i--) {
+    if (num >= units[i].value) {
+      // Делим на нужную степень и оставляем 2 знака после запятой
+      let formatted = (num / units[i].value).toFixed(2);
+      // Убираем лишние нули в конце (например, 1.00 превращаем в 1, 1.50 в 1.5)
+      formatted = parseFloat(formatted).toString();
+      return formatted + units[i].symbol;
+    }
+  }
+  return num.toString();
 }
-
 function applyOffline() {
   const now = Date.now(); let sec = Math.floor((now - state.lastTick) / 1000);
   if (sec < 60) return; sec = Math.min(sec, 3600);
