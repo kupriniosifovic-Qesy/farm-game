@@ -836,15 +836,51 @@ function defaultState() {
 
 async function load() {
   state = defaultState();
-  // ЗАЩИТА ОТ UNDEFINED:
-                      if (!state.usedPromos) state.usedPromos = [];
-                      if (!state.stats) state.stats = { harvests: 0, ghHarvests: 0, rainbow: 0, coinsSpent: 0, wheelSpins: 0 };
-                      if (!state.animalUpgrades) state.animalUpgrades = {};
 
-                      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-                      applyOffline();
-                      return;
-                    }
+  // Защита от undefined для локальных данных
+  if (!state.usedPromos) state.usedPromos = [];
+  if (!state.stats) state.stats = { harvests: 0, ghHarvests: 0, rainbow: 0, coinsSpent: 0, wheelSpins: 0 };
+  if (!state.animalUpgrades) state.animalUpgrades = {};
+
+  if (initData) {
+    try {
+      const res = await fetch('https://farm-server-8fyo.onrender.com/api/get-player', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.player) {
+          state = { ...defaultState(), ...data.player };
+          
+          // Защита от undefined для данных с сервера
+          if (!state.usedPromos) state.usedPromos = [];
+          if (!state.stats) state.stats = { harvests: 0, ghHarvests: 0, rainbow: 0, coinsSpent: 0, wheelSpins: 0 };
+          if (!state.animalUpgrades) state.animalUpgrades = {};
+
+          localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+          applyOffline();
+          return;
+        }
+      }
+    } catch (e) {
+      console.log('Сервер недоступен, грузим локально', e);
+    }
+  }
+
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    state = { ...defaultState(), ...JSON.parse(raw) };
+    if (!state.stats) state.stats = { harvests: 0, ghHarvests: 0, rainbow: 0, coinsSpent: 0, wheelSpins: 0 };
+    if (!state.animalUpgrades) state.animalUpgrades = {};
+    if (!state.usedPromos) state.usedPromos = [];
+    applyOffline();
+  } catch(e) { 
+    console.log('Ошибка локальной загрузки', e); 
+  }
+}
 
   if (initData) {
     try {
@@ -1155,25 +1191,6 @@ function updateDailyUI() {
     claimBtn.disabled = false;
   }
 }
-
-  if (state.lastDailyClaim === 0) {
-    streakText.innerText = "1 день (старт)";
-    claimBtn.innerText = "ЗАБРАТЬ НАГРАДУ";
-    claimBtn.disabled = false;
-  } else if (timeSince < msInDay) {
-    const left = msInDay - timeSince;
-    const h = Math.floor(left / 3600000);
-    const m = Math.floor((left % 3600000) / 60000);
-    streakText.innerText = `${state.dailyStreak} дней`;
-    claimBtn.innerText = `ЖДИТЕ ${h}ч ${m}м`;
-    claimBtn.disabled = true;
-  } else {
-    streakText.innerText = `${state.dailyStreak} дней`;
-    claimBtn.innerText = "ЗАБРАТЬ НАГРАДУ";
-    claimBtn.disabled = false;
-  }
-}
-
 $('claimDailyBtn').onclick = () => {
   try {
     const now = Date.now();
