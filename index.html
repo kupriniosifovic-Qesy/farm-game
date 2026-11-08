@@ -862,7 +862,7 @@ async function load() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return;
     state = { ...defaultState(), ...JSON.parse(raw) };
-    if (!state.stats) state. stats: { harvests: 0, ghHarvests: 0, rainbow: 0, coinsSpent: 0, wheelSpins: 0 };
+    if (!state.stats) state. stats: { harvests: 0, ghHarvests: 0, rainbow: 0, coinsSpent: 0, wheelSpins: 0 }:
     if (!state.animalUpgrades) state.animalUpgrades = {};
     if (!state.usedPromos) state.usedPromos = [];
     applyOffline();
