@@ -536,7 +536,6 @@
     </div>
   </div>
   <!-- ДОНАТ ЗА ЗВЕЗДЫ -->
-  <!-- ДОНАТ ЗА ЗВЕЗДЫ -->
   <div class="pane" id="pane-stars">
     <div class="field">
       <div class="field-head"><h2>⭐ Магазин Telegram Stars</h2></div>
@@ -819,7 +818,7 @@ function defaultState() {
     usedPromos: [],
     dailyStreak: 0,
     lastDailyClaim: 0,
-    stats: { harvests: 0, ghHarvests: 0, rainbow: 0 },
+    stats: { harvests: 0, ghHarvests: 0, rainbow: 0, coinsSpent: 0, wheelSpins: 0 },
     hasAutoCollector: false,
     hasSpeedBooster: false,
     isVip: false,
@@ -837,7 +836,7 @@ function defaultState() {
 async function load() {
   state = defaultState();
 
-  // Защита от undefined для локальных данных
+  // Защита локальных данных от undefined
   if (!state.usedPromos) state.usedPromos = [];
   if (!state.stats) state.stats = { harvests: 0, ghHarvests: 0, rainbow: 0, coinsSpent: 0, wheelSpins: 0 };
   if (!state.animalUpgrades) state.animalUpgrades = {};
@@ -854,7 +853,7 @@ async function load() {
         if (data.success && data.player) {
           state = { ...defaultState(), ...data.player };
           
-          // Защита от undefined для данных с сервера
+          // Защита данных с сервера от undefined
           if (!state.usedPromos) state.usedPromos = [];
           if (!state.stats) state.stats = { harvests: 0, ghHarvests: 0, rainbow: 0, coinsSpent: 0, wheelSpins: 0 };
           if (!state.animalUpgrades) state.animalUpgrades = {};
@@ -882,38 +881,6 @@ async function load() {
   }
 }
 
-  if (initData) {
-    try {
-      const res = await fetch('https://farm-server-8fyo.onrender.com/api/get-player', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.player) {
-          state = { ...defaultState(), ...data.player };
-          localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-          applyOffline();
-          return;
-        }
-      }
-    } catch (e) {
-      console.log('Сервер недоступен, грузим локально', e);
-    }
-  }
-
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return;
-    state = { ...defaultState(), ...JSON.parse(raw) };
-    if (!state.stats) state.stats = { harvests: 0, ghHarvests: 0, rainbow: 0, coinsSpent: 0, wheelSpins: 0 };
-    if (!state.animalUpgrades) state.animalUpgrades = {};
-    if (!state.usedPromos) state.usedPromos = [];
-    applyOffline();
-  } catch(e) { console.log('Ошибка локальной загрузки', e); }
-}
-
 let saveTimeout = null;
 function save() {
   state.lastTick = Date.now();
@@ -939,35 +906,25 @@ const xpNeeded = lvl => Math.floor(150 * Math.pow(1.65, lvl - 1));
 
 function formatNum(num) {
   if (num < 1000) return Math.floor(num).toString();
-  
-  // Убираем лишние пробелы для чисел до миллиона
   if (num < 1000000) return Math.floor(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   
   const units = [
-    { value: 1e6, symbol: 'M' },  // Миллионы
-    { value: 1e9, symbol: 'B' },  // Миллиарды
-    { value: 1e12, symbol: 'T' }, // Триллионы
-    { value: 1e15, symbol: 'Qa' },// Квадриллионы
-    { value: 1e18, symbol: 'Qi' },// Квинтиллионы
-    { value: 1e21, symbol: 'Sx' },// Секстиллионы
-    { value: 1e24, symbol: 'Sp' },// Септиллионы
-    { value: 1e27, symbol: 'Oc' },// Октиллионы
-    { value: 1e30, symbol: 'No' },// Нониллионы
-    { value: 1e33, symbol: 'Dc' } // Дециллионы
+    { value: 1e6, symbol: 'M' }, { value: 1e9, symbol: 'B' }, { value: 1e12, symbol: 'T' },
+    { value: 1e15, symbol: 'Qa' },{ value: 1e18, symbol: 'Qi' },{ value: 1e21, symbol: 'Sx' },
+    { value: 1e24, symbol: 'Sp' },{ value: 1e27, symbol: 'Oc' },{ value: 1e30, symbol: 'No' },
+    { value: 1e33, symbol: 'Dc' }
   ];
   
-  // Идем с конца, чтобы найти самое большое подходящее сокращение
   for (let i = units.length - 1; i >= 0; i--) {
     if (num >= units[i].value) {
-      // Делим на нужную степень и оставляем 2 знака после запятой
       let formatted = (num / units[i].value).toFixed(2);
-      // Убираем лишние нули в конце (например, 1.00 превращаем в 1, 1.50 в 1.5)
       formatted = parseFloat(formatted).toString();
       return formatted + units[i].symbol;
     }
   }
   return num.toString();
 }
+
 function applyOffline() {
   const now = Date.now(); let sec = Math.floor((now - state.lastTick) / 1000);
   if (sec < 60) return; sec = Math.min(sec, 3600);
@@ -992,8 +949,8 @@ function getIncome() {
   }
   let total = base * (1 + (state.upgrades.income || 0) * 0.25) * starMult();
   if (state.feedEndTime && Date.now() < state.feedEndTime) total *= 2;
-  if (state.isVip) total *= 1.5; // Вечный VIP (если купили отдельно)
-  if (state.tempVipEndTime && Date.now() < state.tempVipEndTime) total *= 1.5; // Временный VIP (из набора)
+  if (state.isVip) total *= 1.5; 
+  if (state.tempVipEndTime && Date.now() < state.tempVipEndTime) total *= 1.5; 
   return total;
 }
 
@@ -1105,7 +1062,7 @@ window.buyPlot = () => {
   const cost = 10000 * Math.pow(3, state.plots.length - 6);
     if (state.coins >= cost) {
     state.coins -= cost;
-    state.stats.coinsSpent = (state.stats.coinsSpent || 0) + cost; // <--- Тут cost, а не c!
+    state.stats.coinsSpent = (state.stats.coinsSpent || 0) + cost;
     state.plots.push(null);
     toast('Куплено новое поле!', 'gold');
     AudioSys.upgrade();
@@ -1191,6 +1148,7 @@ function updateDailyUI() {
     claimBtn.disabled = false;
   }
 }
+
 $('claimDailyBtn').onclick = () => {
   try {
     const now = Date.now();
@@ -1233,7 +1191,6 @@ $('applyPromoBtn').onclick = () => {
     const code = $('promoInput').value.toUpperCase().trim();
     if (!code) return;
     
-    // Защита от undefined
     if (!state.usedPromos) state.usedPromos = [];
 
     if (state.usedPromos.includes(code)) {
@@ -1343,9 +1300,9 @@ window.spinWheel = () => {
   const cost = getWheelCost();
   if (state.coins < cost) { toast('Недостаточно монет!', 'warn'); return; }
   
-   state.coins -= cost;
+  state.coins -= cost;
   state.lastWheelSpin = now;
-  state.stats.wheelSpins = (state.stats.wheelSpins || 0) + 1; // <--- НОВАЯ СТРОЧКА
+  state.stats.wheelSpins = (state.stats.wheelSpins || 0) + 1;
   isSpinning = true;
   $('spinBtn').disabled = true;
   
@@ -1438,13 +1395,11 @@ function checkQuests() {
   const now = Date.now();
   if (!state.quests) state.quests = { daily: null, weekly: null, dailyTime: 0, weeklyTime: 0, dailyClaimed: false, weeklyClaimed: false };
 
-  // Ежедневные (24 часа)
   if (now - state.quests.dailyTime > 24 * 60 * 60 * 1000) {
     state.quests.daily = DAILY_POOL[Math.floor(Math.random() * DAILY_POOL.length)];
     state.quests.dailyTime = now;
     state.quests.dailyClaimed = false;
   }
-  // Еженедельные (7 дней)
   if (now - state.quests.weeklyTime > 7 * 24 * 60 * 60 * 1000) {
     state.quests.weekly = WEEKLY_POOL[Math.floor(Math.random() * WEEKLY_POOL.length)];
     state.quests.weeklyTime = now;
@@ -1469,7 +1424,8 @@ window.claimQuest = (type) => {
     toast('❌ Условия квеста еще не выполнены!', 'warn');
   }
 };
-  window.inviteFriend = () => {
+
+window.inviteFriend = () => {
   if (!window.Telegram || !window.Telegram.WebApp) return;
   const userId = window.Telegram.WebApp.initDataUnsafe?.user?.id;
   if (!userId) return;
@@ -1477,7 +1433,9 @@ window.claimQuest = (type) => {
   const refLink = `https://t.me/QesyFarmBot?start=ref_${userId}`;
   window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=🌾 Заходи в Ферму: Империю! Получи бонус новичка и построй свою империю!`);
 };
-function render() { if ($('refCount')) $('refCount').innerText = state.referralCount || 0;
+
+function render() { 
+  if ($('refCount')) $('refCount').innerText = state.referralCount || 0;
   $('coins').textContent = formatNum(state.coins);
   $('level').textContent = state.level;
   
@@ -1676,359 +1634,4 @@ function render() { if ($('refCount')) $('refCount').innerText = state.referralC
     return `<div class="item" id="upg-row-${u.id}">
       <div class="icon">${u.icon}</div>
       <div class="info"><div class="name">${u.name} <span class="badge">Ур. ${lvl}/${u.max}</span></div><div class="desc">${u.desc}</div></div>
-      <button class="buy" onclick="buyUpgrade('${u.id}')" ${lvl>=u.max||state.coins<cost?'disabled':''}>${lvl>=u.max?'МАКС':formatNum(cost)} 💰</button>
-    </div>`;
-  }).join('');
-
-  if (state.level < 30) {
-    $('prestigeList').innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted); font-weight:800;">Откроется на 30 уровне (сейчас: ${state.level})</div>`;
-  } else {
-    const gain = Math.floor(state.level / 10);
-    $('prestigeList').innerHTML = `
-      <div class="item" style="border-color:rgba(199,158,255,0.4); background: rgba(199,158,255,0.1);">
-        <div class="icon">✨</div>
-        <div class="info">
-          <div class="name" style="color:var(--purple);">Переродиться</div>
-          <div class="desc">Получить <b>+${gain} Звезд</b> (текущие: ${state.stars})</div>
-        </div>
-        <button onclick="doPrestige()" style="background:linear-gradient(180deg, #9b59b6, #71368a); box-shadow: 0 5px 0 #4a1c5c;">Сброс</button>
-      </div>`;
-  }
-
-  $('achievementsList').innerHTML = ACHIEVEMENTS.map(a => {
-    const unlocked = state.achievements[a.id] ? true : false;
-    return `<div class="ach-item ${unlocked ? 'unlocked' : ''}">
-      <div class="a-icon">${a.icon}</div>
-      <div>
-        <div class="a-name" style="color:${a.rColor}; text-shadow: 0 0 8px ${a.rColor}60;">${a.name} <span class="rarity-badge" style="color:${a.rColor}; border:1px solid ${a.rColor}; background: ${a.rColor}22;">${a.rarity}</span></div>
-        <div class="a-desc">${a.desc}</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  if (state.hasAutoCollector) { const b = $('btn-autocollector'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
-  if (state.hasSpeedBooster) { const b = $('btn-speedbooster'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
-  if (state.isVip) { const b = $('btn-vip'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
-  if (state.hasGoldenShovel) { const b = document.querySelector('button[onclick="buyStars(\'golden_shovel\')"]'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
-  if (state.hasLifeElixir) { const b = document.querySelector('button[onclick="buyStars(\'life_elixir\')"]'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
-  if (state.hasBusinessCenter) { const b = document.querySelector('button[onclick="buyStars(\'business_center\')"]'); if(b){b.textContent = 'Куплено'; b.classList.add('owned'); b.disabled = true;} }
-    // Отрисовка квестов
-  if ($('questsList')) {
-    checkQuests();
-    const renderQuestItem = (type, q, claimed) => {
-      if (!q) return '<div style="padding:15px; color:var(--muted); text-align:center;">Загрузка...</div>';
-      const progress = getQuestProgress(q.type, q.target);
-      const isDone = progress >= q.target;
-      return `
-        <div class="item">
-          <div class="info">
-            <div class="name">${type === 'daily' ? '📅 Ежедневный' : '📆 Еженедельный'}</div>
-            <div class="desc">${q.text} <br><span style="color:${isDone ? 'var(--accent)' : 'var(--gold)'}; font-weight:900;">${progress} / ${q.target}</span></div>
-          </div>
-          <button class="buy" onclick="claimQuest('${type}')" ${claimed || !isDone ? 'disabled' : ''}>
-            ${claimed ? '✅ Получено' : formatNum(q.reward) + ' 💰'}
-          </button>
-        </div>
-      `;
-    };
-    $('questsList').innerHTML = renderQuestItem('daily', state.quests.daily, state.quests.dailyClaimed) + renderQuestItem('weekly', state.quests.weekly, state.quests.weeklyClaimed);
-  }
-  updateWheelBtn();
-}
-
-/* ================= ФУНКЦИИ ПОКУПОК ================= */
-window.buyTool = (id) => { 
-  const t=TOOLS.find(x=>x.id===id), lvl=state.tools[id]||0; 
-  if (lvl >= t.maxLvl) { toast('Максимальный уровень!', 'warn'); return; }
-  const c=t.cost*(lvl+1); 
-    if(state.coins>=c){
-    state.coins-=c; 
-    state.stats.coinsSpent = (state.stats.coinsSpent || 0) + c; // <--- НОВАЯ СТРОЧКА
-    state.tools[id]=lvl+1; 
-    // ...
-    AudioSys.upgrade(); 
-    save(); render(); checkAchievements();
-    flashRow(`tool-row-${id}`);
-  } 
-};
-window.buyRarity = (id) => { 
-  const r=RARITY_UPGRADES.find(x=>x.id===id), lvl=state.rarityUp[id]||0; 
-  const c=r.baseCost*Math.pow(r.mult,lvl); 
-    if(state.coins>=c && lvl<r.max){
-    state.coins-=c; 
-    state.stats.coinsSpent = (state.stats.coinsSpent || 0) + c;
-    state.rarityUp[id]=lvl+1; 
-    AudioSys.upgrade(); 
-    flashScreen(r.color);
-    toast(`✨ Шанс на ${r.name} улучшен!`, 'rarity');
-    save(); render();
-    flashRow(`rarity-row-${id}`);
-  } 
-};
-window.buyGH = (id) => { 
-  const u=GH_UPGRADES.find(x=>x.id===id), lvl=state.greenhouse.upgrades[id]||0; 
-  const c=u.baseCost*Math.pow(u.mult,lvl); 
-   if(state.coins>=c && lvl<u.max){
-    state.coins-=c; 
-    state.stats.coinsSpent = (state.stats.coinsSpent || 0) + c;
-    state.greenhouse.upgrades[id]=lvl+1;
-    AudioSys.upgrade();
-    save(); render();
-    flashRow(`gh-row-${id}`);
-  } 
-};
-window.buyAnimal = (id) => { 
-  const a=ANIMALS.find(x=>x.id===id); 
-  const cnt = state.animals[id] || 0;
-  const limit = a.limit || 250;
-  if (cnt >= limit) {
-    toast('Достигнут максимум животных!', 'warn');
-    return;
-  }
-  const c=getAnimalCost(a); 
-   if(state.coins>=c){
-    state.coins-=c; 
-    state.stats.coinsSpent = (state.stats.coinsSpent || 0) + c; // <--- ВОТ ЭТА СТРОКА
-    state.animals[id]=cnt+1;
-    AudioSys.buy();
-    save(); render(); checkAchievements();
-    flashRow(`animal-row-${id}`);
-  } 
-};
-window.buyUpgrade = (id) => { 
-  const u=UPGRADES.find(x=>x.id===id), lvl=state.upgrades[id]||0; 
-  const c=u.baseCost*Math.pow(u.mult,lvl); 
-    if(state.coins>=c && lvl<u.max){
-    state.coins-=c; 
-    state.stats.coinsSpent = (state.stats.coinsSpent || 0) + c;
-    state.upgrades[id]=lvl+1;
-    AudioSys.upgrade();
-    save(); render();
-    flashRow(`upg-row-${id}`);
-  } 
-};
-window.buyAnimalUpgrade = (id) => { 
-  const u=ANIMAL_UPGRADES.find(x=>x.id===id), lvl=state.animalUpgrades[id]||0; 
-  const c=u.baseCost*Math.pow(u.mult,lvl); 
-    if(state.coins>=c && lvl<u.max){
-    state.coins-=c; 
-    state.stats.coinsSpent = (state.stats.coinsSpent || 0) + c;
-    state.animalUpgrades[id]=lvl+1;
-    AudioSys.upgrade();
-    save(); render(); checkAchievements();
-    flashRow(`animal-upg-row-${id}`);
-  } 
-};
-window.plantGH = () => {
-  const c = CROPS.find(x=>x.id===state.selectedCrop);
-  if(state.coins >= c.cost) {
-    state.coins -= c.cost;
-    state.greenhouse.planted = c.id;
-    state.greenhouse.readyAt = Date.now() + 15000;
-    AudioSys.plant(); save(); render();
-  }
-}
-window.harvestGH = () => {
-  const c = CROPS.find(x=>x.id===state.greenhouse.planted);
-  const upgMult = 1 + (state.greenhouse.upgrades.light + state.greenhouse.upgrades.soil + state.greenhouse.upgrades.fence) * 0.2;
-  const weight = Math.floor(Math.random() * 5000 * upgMult) + 1000;
-  const r = rollRarity();
-  const weightMult = 0.5 + (weight / 20);
-  const finalSell = Math.floor(c.sell * getValueMult() * r.mult * weightMult);
-  
-  state.coins += finalSell;
-  state.greenhouse.planted = null;
-  state.stats.ghHarvests++;
-  addXp(c.xp * 5);
-  checkAchievements();
-  AudioSys.gold();
-  toast(`🏡 Теплица: +${formatNum(finalSell)} 💰 (${weight}кг) ${r.icon}`, 'gold');
-  save(); render();
-}
-window.toast = (msg, type = '') => {
-  const el = document.createElement('div'); el.className = 'toast ' + type; 
-  el.innerHTML = msg;
-  $('toasts').appendChild(el); 
-  setTimeout(() => el.remove(), type === 'rarity' ? 2500 : 2000);
-};
-function flashRow(id) { const el = document.getElementById(id); if (el) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 600); } }
-function flashScreen(color) { const flash = document.createElement('div'); flash.style = `position:fixed; inset:0; background:${color}; opacity:0.15; z-index:9999; pointer-events:none; transition:opacity 0.5s ease-out;`; document.body.appendChild(flash); requestAnimationFrame(() => { flash.style.opacity = '0'; }); setTimeout(() => flash.remove(), 500); }
-
-/* ================= ПРЕСТИЖ ================= */
-window.doPrestige = () => {
-  if (state.level < 30) return;
-  if (!confirm('Вы уверены? Вы потеряете весь прогресс, но получите Звезды (+15% ко всему навсегда).')) return;
-  const gained = Math.floor(state.level / 10);
-  const oldAch = state.achievements; const oldStats = state.stats;
-  const oldDonat = { hasAutoCollector: state.hasAutoCollector, hasSpeedBooster: state.hasSpeedBooster, isVip: state.isVip };
-  const oldRef = { referralCount: state.referralCount || 0, referredBy: state.referredBy, referralRewarded: state.referralRewarded }; // Сохраняем рефералов
-  
-  state = defaultState(); // Убрали лишние аргументы
-  state.stars = gained; state.achievements = oldAch; state.stats = oldStats;
-  Object.assign(state, oldDonat); 
-  Object.assign(state, oldRef); // Возвращаем рефералов обратно
-  
-  AudioSys.gold();
-  toast(`✨ Перерождение! Вы получили ${gained} звезд!`, 'gold');
-  save(); render();
-};
-
-/* ================= ИВЕНТЫ ================= */
-function triggerEvent() {
-  if (state.activeEvent && Date.now() < state.activeEvent.endTime) return;
-  const rand = Math.random(); let type = ''; let dur = 120000;
-  if (rand < 0.4) {
-    type = 'golden_rain'; dur = (Math.random() * 3 + 2) * 60000;
-    state.activeEvent = { type, endTime: Date.now() + dur, multSpeed: Math.random() < 0.5 ? 2 : 3, multIncome: 4 };
-    toast('🌧 ЗОЛОТОЙ ДОЖДЬ! Скорость и Доход увеличены!', 'gold');
-  } else if (rand < 0.7) {
-    type = 'drought'; state.activeEvent = { type, endTime: Date.now() + dur };
-    toast('☀️ ЗАСУХА! Скорость роста снижена.', 'warn');
-  } else if (rand < 0.85) {
-    type = 'crows'; const stolen = Math.floor(state.coins * 0.05);
-    state.coins -= stolen; toast(`🦅 Вороны украли ${formatNum(stolen)} монет!`, 'warn');
-    state.activeEvent = null;
-  } else {
-    toast('🐝 Золотая пчела! Успей кликнуть!', 'gold'); spawnBee(); state.activeEvent = null;
-  }
-  if (state.activeEvent) {
-    $('eventBanner').style.display = 'block';
-    $('eventBanner').innerText = type === 'golden_rain' ? `🌧 ЗОЛОТОЙ ДОЖДЬ (x${state.activeEvent.multSpeed} скор, x4 доход)` : '☀️ ЗАСУХА (x0.5 скорость)';
-  }
-  render();
-}
-function spawnBee() {
-  const bee = document.createElement('div'); bee.innerHTML = '🐝';
-  bee.style = `position:fixed; font-size:50px; z-index:5000; cursor:pointer; top:${Math.random()*70+10}%; left:${Math.random()*80+10}%; transition: 0.5s; filter: drop-shadow(0 0 10px gold);`;
-  document.body.appendChild(bee);
-  bee.onclick = () => { const bonus = getIncome() * 300; state.coins += bonus; toast(`🐝 Поймал пчелу! +${formatNum(bonus)} монет`, 'gold'); AudioSys.gold(); bee.remove(); save(); render(); };
-  setTimeout(() => { if(document.body.contains(bee)) bee.remove(); }, 10000);
-}
-
-/* ================= АВТОСБОРЩИК ================= */
-setInterval(() => {
-  if (!gameStarted || !state.hasAutoCollector) return;
-  state.plots.forEach((p, i) => { if (p && Date.now() >= p.readyAt) harvest(i, true); });
-  save(); render();
-}, 10000); 
-
-/* ================= ИНТЕГРАЦИЯ TELEGRAM STARS ================= */
-window.buyStars = (productId) => {
-  if (!window.Telegram || !window.Telegram.WebApp) { alert('Оплата доступна только в приложении Telegram!'); return; }
-  const tg = window.Telegram.WebApp; toast('Создаем счет...', 'gold');
-  fetch('https://farm-server-8fyo.onrender.com/api/create-invoice', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.invoiceLink) {
-      tg.openInvoice(data.invoiceLink, (status) => {
-        if (status === 'paid') {
-          toast('✅ Оплата прошла! Спасибо!', 'gold');
-          setTimeout(() => { load(); }, 2000);
-        } else if (status === 'failed') { toast('❌ Ошибка оплаты', 'warn'); }
-        else if (status === 'cancelled') { toast('Оплата отменена', 'warn'); }
-      });
-    } else { toast('Ошибка сервера: ' + data.error, 'warn'); }
-  })
-  .catch(err => { console.error(err); toast('Ошибка соединения с сервером (возможно, он спит)', 'warn'); });
-};
-
-/* ================= ЦИКЛ ================= */
-load();
-setInterval(() => {
-  if(!gameStarted) return;
-  state.coins += getIncome() / 2;
-  render();
-  if(state.activeEvent && Date.now() > state.activeEvent.endTime) { state.activeEvent = null; $('eventBanner').style.display = 'none'; toast('Событие закончилось', 'warn'); }
-}, 500);
-
-setInterval(save, 3000);
-
-/* ================= ИНТЕРФЕЙС ================= */
-const bgContainer = $('floating-bg');
-const emojis = ['🍃', '🌾', '💰', '☁️', '🍂', '🌱'];
-function createFloatingItem() {
-  if (bgContainer.children.length > 20) return;
-  const el = document.createElement('div'); el.className = 'float-item';
-  el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-  el.style.left = Math.random() * 100 + 'vw';
-  el.style.animationDuration = (Math.random() * 10 + 10) + 's';
-  el.style.fontSize = (Math.random() * 20 + 15) + 'px';
-  el.style.animationDelay = Math.random() * 5 + 's';
-  bgContainer.appendChild(el);
-  setTimeout(() => { el.remove(); }, 15000); 
-}
-setInterval(createFloatingItem, 2000);
-for(let i=0; i<5; i++) createFloatingItem(); 
-
-const vineEmojis = ['🌿', '🍃', '🌱', '🌻', '🍀'];
-function createVines(containerId) {
-  const container = $(containerId);
-  for(let i=0; i<8; i++) {
-    const el = document.createElement('div'); el.className = 'vine-item';
-    el.textContent = vineEmojis[Math.floor(Math.random() * vineEmojis.length)];
-    el.style.top = (i * 12) + '%';
-    el.style.animationDelay = (Math.random() * 2) + 's';
-    el.style.fontSize = (Math.random() * 10 + 24) + 'px';
-    container.appendChild(el);
-  }
-}
-createVines('sideLeft'); createVines('sideRight');
-
-$('btn-play').onclick = () => { $('main-menu').style.opacity = '0'; setTimeout(()=>$('main-menu').style.display='none',300); $('game-container').style.display='block'; gameStarted = true; render(); };
-$('btn-daily').onclick = openDaily;
-$('btn-promo').onclick = openPromo;
-
-let musicOn = false;
-$('musicBtn').onclick = () => {
-  musicOn = AudioSys.toggleMusic();
-  $('musicBtn').innerText = `🎵 Музыка: ${musicOn ? 'Вкл' : 'Выкл'}`;
-};
-
-$('btn-reset-menu').onclick = () => {
-  if (confirm('Точно сбросить весь прогресс?')) {
-    localStorage.removeItem(SAVE_KEY); state = defaultState(); render(); toast('Сброшено!', 'warn');
-  }
-};
-
-$('menuBtn').onclick = () => { $('main-menu').style.display='flex'; setTimeout(()=>$('main-menu').style.opacity='1',10); $('game-container').style.display='none'; gameStarted = false; };
-
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.onclick = () => {
-    if(tab.dataset.tab === 'greenhouse' && state.level < 10) { toast('Теплица откроется на 10 уровне!', 'warn'); return; }
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
-    tab.classList.add('active'); $('pane-' + tab.dataset.tab).classList.add('active');
-    if (tab.dataset.tab === 'farm') $('farmDot').style.display = 'none';
-    AudioSys.click();
-  };
-});
-
-$('feedBtn').onclick = feedAnimals;
-$('plantAllBtn').onclick = plantAll;
-$('harvestAllBtn').onclick = harvestAll;
-
-$('adBtn').onclick = () => {
-  if (typeof window.Adsgram === 'undefined') { alert('Реклама недоступна'); return; }
-  if (Date.now() - state.lastAdTime < AD_COOLDOWN_MS) { toast('Реклама еще не готова!', 'warn'); return; }
-  
-  const AdController = window.Adsgram.init({ blockId: "58574" });
-  AdController.show().then(r => {
-    if (r.done) {
-      toast('⏳ Проверяем просмотр...', 'gold');
-      // Ждем 2 секунды, чтобы сервер успел получить запрос от Adsgram и начислить монеты
-      setTimeout(() => {
-        load(); // Загружаем актуальное состояние с сервера (монеты уже придут оттуда)
-        toast('🎁 Награда получена!', 'gold');
-      }, 2000);
-    }
-  }).catch(e => console.log(e));
-};
-
-$('soundBtn').onclick = () => { let on = AudioSys.toggleSfx(); $('soundBtn').innerText = on ? '🔊' : '🔇'; };
-
-if (window.Telegram && window.Telegram.WebApp) { const tg = window.Telegram.WebApp; tg.expand(); tg.ready(); }
-</script>
-</body>
-</html>
+      <button class="buy" onclick="buyUpgrade('${u.id}')" ${
