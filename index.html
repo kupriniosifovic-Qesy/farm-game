@@ -532,52 +532,40 @@
     </div>
   </div>
   <!-- ДОНАТ ЗА ЗВЕЗДЫ -->
+  <!-- ДОНАТ ЗА ЗВЕЗДЫ -->
   <div class="pane" id="pane-stars">
     <div class="field">
       <div class="field-head"><h2>⭐ Магазин Telegram Stars</h2></div>
       <p style="font-size:13px; color:var(--muted); margin-bottom:15px; font-weight:700;">Покупайте редкие предметы за звезды. Деньги идут на развитие игры!</p>
       
-      <h3 style="color:var(--gold); margin-bottom:10px; text-shadow: 0 0 10px rgba(255,215,106,0.5);">💰 Монеты</h3>
+      <h3 style="color:var(--gold); margin-bottom:10px; text-shadow: 0 0 10px rgba(255,215,106,0.5);">💰 Пакеты монет</h3>
       <div class="shop">
-        <div class="item">
-          <div class="icon">💰</div>
-          <div class="info"><div class="name" style="color:var(--gold); text-shadow: 0 0 8px rgba(255,215,106,0.5);">1 Миллион</div><div class="desc">Мгновенное пополнение</div></div>
-          <button class="star-btn" onclick="buyStars('coins_1m')">50 ⭐</button>
-        </div>
-        <div class="item">
-          <div class="icon">💰</div>
-          <div class="info"><div class="name" style="color:var(--gold); text-shadow: 0 0 8px rgba(255,215,106,0.5);">10 Миллионов</div><div class="desc">Для серьезных фермеров</div></div>
-          <button class="star-btn" onclick="buyStars('coins_10m')">300 ⭐</button>
-        </div>
-        <div class="item">
-          <div class="icon">💰</div>
-          <div class="info"><div class="name" style="color:var(--gold); text-shadow: 0 0 8px rgba(255,215,106,0.5);">100 Миллионов</div><div class="desc">Станьте миллиардером</div></div>
-          <button class="star-btn" onclick="buyStars('coins_100m')">1500 ⭐</button>
-        </div>
+        <div class="item"><div class="icon">💰</div><div class="info"><div class="name">10 Миллионов</div><div class="desc">Быстрый старт</div></div><button class="star-btn" onclick="buyStars('coins_10m')">29 ⭐</button></div>
+        <div class="item"><div class="icon">💰</div><div class="info"><div class="name">100 Миллионов</div><div class="desc">Серьезный капитал</div></div><button class="star-btn" onclick="buyStars('coins_100m')">49 ⭐</button></div>
+        <div class="item"><div class="icon">💰</div><div class="info"><div class="name">10 Миллиард</div><div class="desc">Магнат</div></div><button class="star-btn" onclick="buyStars('coins_1b')">189 ⭐</button></div>
+        <div class="item"><div class="icon">💰</div><div class="info"><div class="name">150 Миллиардов</div><div class="desc">Империя</div></div><button class="star-btn" onclick="buyStars('coins_5b')">289 ⭐</button></div>
+        <div class="item"><div class="icon">💰</div><div class="info"><div class="name">1 Триллион</div><div class="desc">Абсолют</div></div><button class="star-btn" onclick="buyStars('coins_10b')">499 ⭐</button></div>
+      </div>
+
+      <h3 style="color:var(--gold); margin-top:15px; margin-bottom:10px; text-shadow: 0 0 10px rgba(255,215,106,0.5);">🎁 Выгодные предложения</h3>
+      <div class="shop">
+        <div class="item"><div class="icon">🎁</div><div class="info"><div class="name">Сундук новичка</div><div class="desc">5 000 000 монет</div></div><button class="star-btn" onclick="buyStars('starter_pack')">29 ⭐</button></div>
+        <div class="item"><div class="icon">⚡</div><div class="info"><div class="name">Пакет ускорения</div><div class="desc">15 000 000 монет</div></div><button class="star-btn" onclick="buyStars('booster_pack')">49 ⭐</button></div>
+        <div class="item"><div class="icon">🎰</div><div class="info"><div class="name">Кейс удачи</div><div class="desc">От 1М до 50М монет</div></div><button class="star-btn" onclick="buyStars('lucky_case')">29 ⭐</button></div>
+        <div class="item"><div class="icon">👨‍🌾</div><div class="info"><div class="name">Набор фермера</div><div class="desc">30 000 000 монет + VIP</div></div><button class="star-btn" onclick="buyStars('farmer_pack')">179 ⭐</button></div>
       </div>
 
       <h3 style="color:var(--gold); margin-top:15px; margin-bottom:10px; text-shadow: 0 0 10px rgba(255,215,106,0.5);">🚀 Вечные улучшения</h3>
       <div class="shop">
-        <div class="item">
-          <div class="icon">🤖</div>
-          <div class="info"><div class="name" style="color:var(--blue); text-shadow: 0 0 8px rgba(126,200,255,0.5);">Автосборщик</div><div class="desc">Собирает урожай сам каждые 10 сек</div></div>
-          <button class="star-btn" id="btn-autocollector" onclick="buyStars('autocollector')">150 ⭐</button>
-        </div>
-        <div class="item">
-          <div class="icon">⚡</div>
-          <div class="info"><div class="name" style="color:var(--orange); text-shadow: 0 0 8px rgba(255,159,67,0.5);">Вечный ускоритель</div><div class="desc">Навсегда ускоряет рост в 2 раза</div></div>
-          <button class="star-btn" id="btn-speedbooster" onclick="buyStars('speedbooster')">400 ⭐</button>
-        </div>
-        <div class="item" style="border-color:var(--gold);">
-          <div class="icon">👑</div>
-          <div class="info"><div class="name" style="color:var(--purple); text-shadow: 0 0 8px rgba(199,158,255,0.5);">VIP Статус</div><div class="desc">+50% к доходу и золотой ник</div></div>
-          <button class="star-btn" id="btn-vip" onclick="buyStars('vip')">1000 ⭐</button>
-        </div>
+        <div class="item"><div class="icon">🤖</div><div class="info"><div class="name">Автосборщик</div><div class="desc">Сбор урожая каждые 10 сек</div></div><button class="star-btn" id="btn-autocollector" onclick="buyStars('autocollector')">249 ⭐</button></div>
+        <div class="item"><div class="icon">⚡</div><div class="info"><div class="name">Вечный ускоритель</div><div class="desc">Рост x2 навсегда</div></div><button class="star-btn" id="btn-speedbooster" onclick="buyStars('speedbooster')">299 ⭐</button></div>
+        <div class="item"><div class="icon">👑</div><div class="info"><div class="name">VIP Статус</div><div class="desc">+50% к доходу</div></div><button class="star-btn" id="btn-vip" onclick="buyStars('vip')">899 ⭐</button></div>
+        <div class="item"><div class="icon">🥇</div><div class="info"><div class="name">Золотая лопата</div><div class="desc">+100% к весу урожая</div></div><button class="star-btn" onclick="buyStars('golden_shovel')">389 ⭐</button></div>
+        <div class="item"><div class="icon">🧪</div><div class="info"><div class="name">Эликсир жизни</div><div class="desc">Офлайн-доход до 24ч</div></div><button class="star-btn" onclick="buyStars('life_elixir')">569 ⭐</button></div>
+        <div class="item"><div class="icon">🏢</div><div class="info"><div class="name">Бизнес-центр</div><div class="desc">+100% к доходу животных</div></div><button class="star-btn" onclick="buyStars('business_center')">799 ⭐</button></div>
       </div>
     </div>
   </div>
-
-</div>
 
 <!-- Кнопка Колеса Фортуны -->
 <button id="wheelBtn" onclick="openWheel()">🎡</button>
@@ -831,6 +819,7 @@ function defaultState() {
     hasAutoCollector: false,
     hasSpeedBooster: false,
     isVip: false,
+    tempVipEndTime: 0,
     hasGoldenShovel: false,
     hasLifeElixir: false,
     hasBusinessCenter: false,
@@ -954,7 +943,8 @@ function getIncome() {
   }
   let total = base * (1 + (state.upgrades.income || 0) * 0.25) * starMult();
   if (state.feedEndTime && Date.now() < state.feedEndTime) total *= 2;
-  if (state.isVip) total *= 1.5;
+  if (state.isVip) total *= 1.5; // Вечный VIP (если купили отдельно)
+  if (state.tempVipEndTime && Date.now() < state.tempVipEndTime) total *= 1.5; // Временный VIP (из набора)
   return total;
 }
 
