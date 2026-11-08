@@ -1724,7 +1724,6 @@ window.buyAnimal = (id) => {
     state.stats.coinsSpent = (state.stats.coinsSpent || 0) + c; // <--- ВОТ ЭТА СТРОКА
     state.animals[id]=cnt+1;
     AudioSys.buy();
-    AudioSys.buy();
     save(); render(); checkAchievements();
     flashRow(`animal-row-${id}`);
   } 
